@@ -1,0 +1,165 @@
+x-logging:
+    logging: &logging
+        options:
+            max-size: "10m"
+            max-file: "3"
+x-restart:
+    restart: &restart unless-stopped
+
+services:
+    proxy:
+        image: rogerdz/traefik
+        labels:
+            mkcert.services.traefik: ''
+            traefik.enable: true
+            traefik.http.routers.traefik.rule: Host(`traefik`)
+            traefik.http.routers.traefik.entrypoints: http,https
+            traefik.http.routers.traefik.service: api@internal
+            traefik.http.routers.traefik.middlewares: https-redirect@file,compression@file
+
+            denv.message: "Proxy running at: https://traefik/"
+        volumes:
+            - ./conf/traefik/dynamic:/etc/traefik/dynamic
+            - letsencrypt-acme:/letsencrypt
+            - ssl-certs:/etc/cert
+            - ${DOCKER_SOCK:-/var/run/docker.sock}:/var/run/docker.sock:ro
+        environment:
+            VIRTUAL_HOST: traefik
+
+            # TRAEFIK_ACCESSLOG: true
+            TRAEFIK_LOG: true
+            TRAEFIK_LOG_LEVEL: ERROR
+            TRAEFIK_SERVERSTRANSPORT_INSECURESKIPVERIFY: true
+
+            TRAEFIK_ENTRYPOINTS_HTTP: true
+            TRAEFIK_ENTRYPOINTS_HTTP_ADDRESS: :80
+            TRAEFIK_ENTRYPOINTS_HTTP_REUSEPORT: true
+            TRAEFIK_ENTRYPOINTS_HTTP_HTTP_MIDDLEWARES: denvResponseHeader@file
+
+            TRAEFIK_ENTRYPOINTS_HTTPS: true
+            TRAEFIK_ENTRYPOINTS_HTTPS_ADDRESS: :443
+            TRAEFIK_ENTRYPOINTS_HTTPS_REUSEPORT: true
+            TRAEFIK_ENTRYPOINTS_HTTPS_HTTP_TLS: true
+            TRAEFIK_ENTRYPOINTS_HTTPS_HTTP_MIDDLEWARES: sslOffloaded@file,denvResponseHeader@file
+
+            TRAEFIK_ENTRYPOINTS_P8080: true
+            TRAEFIK_ENTRYPOINTS_P8080_ADDRESS: :8080
+            TRAEFIK_ENTRYPOINTS_P8080_REUSEPORT: true
+            TRAEFIK_ENTRYPOINTS_P8080_HTTP_MIDDLEWARES: denvResponseHeader@file
+
+            TRAEFIK_ENTRYPOINTS_P9200: true
+            TRAEFIK_ENTRYPOINTS_P9200_ADDRESS: :9200
+            TRAEFIK_ENTRYPOINTS_P9200_REUSEPORT: true
+            TRAEFIK_ENTRYPOINTS_P9200_HTTP_MIDDLEWARES: denvResponseHeader@file
+
+            TRAEFIK_PROVIDERS_DOCKER: true
+            TRAEFIK_PROVIDERS_DOCKER_NETWORK: proxy
+            TRAEFIK_PROVIDERS_DOCKER_EXPOSEDBYDEFAULT: false
+            TRAEFIK_PROVIDERS_FILE_DIRECTORY: /etc/traefik/dynamic
+            TRAEFIK_PROVIDERS_FILE_WATCH: true
+
+            # TRAEFIK_CERTIFICATESRESOLVERS_LETSENCRYPT: true
+            # TRAEFIK_CERTIFICATESRESOLVERS_LETSENCRYPT_ACME_CASERVER: https://acme-v02.api.letsencrypt.org/directory
+            # TRAEFIK_CERTIFICATESRESOLVERS_LETSENCRYPT_ACME_EMAIL: webmaster@gmail.com
+            # TRAEFIK_CERTIFICATESRESOLVERS_LETSENCRYPT_ACME_STORAGE: letsencrypt/acme.json
+            # TRAEFIK_CERTIFICATESRESOLVERS_LETSENCRYPT_ACME_HTTPCHALLENGE: true
+            # TRAEFIK_CERTIFICATESRESOLVERS_LETSENCRYPT_ACME_HTTPCHALLENGE_ENTRYPOINT: http
+        networks:
+            - proxy
+            - gateway
+        security_opt:
+            - no-new-privileges:true
+        container_name: proxy
+        restart: *restart
+        logging: *logging
+
+    mkcert:
+        image: rogerdz/mkcert
+        volumes:
+            - ssl-certs:/app/certs:rw
+            - ~/.mozilla/firefox:/root/.mozilla/firefox:rw
+            - ~/.pki/nssdb:/root/.pki/nssdb:rw
+            - ~/.local/share/mkcert:/app/ca:rw
+            - ${CA_STORE:-/usr/local/share/ca-certificates}:/usr/local/share/ca-certificates
+            - ${DOCKER_SOCK:-/var/run/docker.sock}:/var/run/docker.sock:ro
+            - ./conf/traefik/dynamic:/traefik
+        network_mode: none
+        container_name: mkcert
+        restart: *restart
+        logging: *logging
+        depends_on:
+            - proxy
+
+    hosts:
+        image: rogerdz/hosts-local
+        labels:
+            denv.message: "Check local domain in /etc/hosts"
+        environment:
+            - CONTAINER_NAME_IP=${CONTAINER_NAME_IP:-proxy}
+        volumes:
+            - ${DOCKER_SOCK:-/var/run/docker.sock}:/var/run/docker.sock:ro
+            - ${ETC_HOSTS_PATH:-/etc/hosts}:/hosts
+        network_mode: none
+        init: true
+        container_name: hosts
+        restart: *restart
+        logging: *logging
+        depends_on:
+            - proxy
+
+    adminer:
+        image: rogerdz/adminer
+        labels:
+            denv.message: "Adminer running at: http://localhost:81/"
+        command: php -S 0.0.0.0:8080 -t /var/www/html
+        ports:
+          - 0.0.0.0:81:8080
+        networks:
+            - database
+        container_name: adminer
+        restart: *restart
+        logging: *logging
+
+    maildev:
+        image: axllent/mailpit
+        labels:
+            denv.message: "Mail service running at: http://localhost:82/"
+        environment:
+            MP_MAX_MESSAGES: ${MAILDEV_STORE_LIMIT:-100}
+            MP_DATABASE: /data/database.db
+            MP_DISABLE_VERSION_CHECK: true
+            MP_SMTP_DISABLE_RDNS: true
+            MP_SMTP_AUTH_ACCEPT_ANY: true
+            MP_SMTP_AUTH_ALLOW_INSECURE: true
+        volumes:
+            - mailpit-data:/data
+        ports:
+            - 0.0.0.0:82:8025
+        networks:
+            - mail
+        container_name: maildev
+        restart: *restart
+        logging: *logging
+
+networks:
+    proxy:
+        driver: bridge
+        name: proxy
+    gateway:
+        driver: bridge
+        name: gateway
+    database:
+        driver: bridge
+        name: database
+    mail:
+        driver: bridge
+        name: mail
+    esnet:
+        driver: bridge
+        name: esnet
+
+volumes:
+    letsencrypt-acme:
+    ssl-certs:
+        name: ssl-certs
+    ? mailpit-data

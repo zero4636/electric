@@ -1,0 +1,191 @@
+x-logging:
+    logging: &logging
+        options:
+            max-size: "10m"
+            max-file: "3"
+x-restart:
+    restart: &restart unless-stopped
+
+services:
+    nginx:
+        image: rogerdz/nginx
+        labels:
+            - traefik.enable=true
+
+            - traefik.http.routers.nginx-${COMPOSE_PROJECT_NAME}.rule=Host(`${VIRTUAL_HOST}`)
+            - traefik.http.routers.nginx-${COMPOSE_PROJECT_NAME}.entrypoints=http,https
+            - traefik.http.routers.nginx-${COMPOSE_PROJECT_NAME}.service=nginx-${COMPOSE_PROJECT_NAME}
+            - traefik.http.services.nginx-${COMPOSE_PROJECT_NAME}.loadbalancer.server.port=80
+
+            # Redirect all http requests to https
+            # - traefik.http.routers.nginx-${COMPOSE_PROJECT_NAME}.middlewares=https-redirect@file
+        networks:
+            proxy:
+            internal:
+                aliases:
+                    - backend
+        environment:
+            UID: ${DOCKER_UID:-1000}
+            GID: ${DOCKER_GID:-1000}
+            WORK_DIR: ${WORK_DIR}
+            VIRTUAL_HOST: ${VIRTUAL_HOST}
+            SET_REAL_IP_FROM: proxy
+            REAL_IP_HEADER: X-Forwarded-For
+            MODULES_ENABLE: ${NGINX_MODULES_ENABLE:-}
+        volumes:
+            - ./nginx-sites.conf:/etc/nginx/templates/default.conf.template:ro
+            - ${WORK_DIR}:${WORK_DIR}:cached
+        restart: *restart
+        logging: *logging
+        depends_on:
+            - php
+
+    php:
+        image: rogerdz/php-fpm:${PHP_VERSION}
+        networks:
+            internal:
+                aliases:
+                    - php-fpm
+            mail:
+            gateway:
+        environment: &php-env
+            UID: ${DOCKER_UID:-1000}
+            GID: ${DOCKER_GID:-1000}
+            PHP_EXTENSIONS_ENABLE: ${PHP_EXTENSIONS_ENABLE}
+            WORK_DIR: ${WORK_DIR}
+            BLOCK_OUTBOUND: ${BLOCK_OUTBOUND}
+            MAGE_INDEXER_THREADS_COUNT: ${MAGE_INDEXER_THREADS_COUNT:-4}
+            XDEBUG_REMOTE_HOST: ${XDEBUG_REMOTE_HOST:-host.docker.internal}
+        volumes:
+            - ${WORK_DIR}:${WORK_DIR}:cached
+            - ./php-custom.ini:/usr/local/etc/php/conf.d/zzz-custom.ini:ro
+            - ./smtp:/etc/msmtprc:ro
+            - ${CA_STORE:-/usr/local/share/ca-certificates}:/usr/local/share/ca-certificates:ro
+        extra_hosts: &php-extra-hosts
+            - "host.docker.internal:host-gateway"
+        external_links: &php-external-links
+            - "proxy:${VIRTUAL_HOST}"
+        cap_add:
+            - SYS_PTRACE
+        restart: *restart
+        logging: *logging
+        hostname: php-${COMPOSE_PROJECT_NAME}-docker
+
+    cli:
+        image: rogerdz/php-fpm:${PHP_VERSION}-cli
+        labels:
+            - traefik.enable=true
+            - traefik.http.routers.livereload-${COMPOSE_PROJECT_NAME}.rule=Host(`${VIRTUAL_HOST}`) && (Path(`/livereload.js`) || Path(`/livereload`))
+            - traefik.http.routers.livereload-${COMPOSE_PROJECT_NAME}.priority=10000
+            - traefik.http.routers.livereload-${COMPOSE_PROJECT_NAME}.entrypoints=http,https
+            - traefik.http.services.livereload-${COMPOSE_PROJECT_NAME}.loadbalancer.server.port=35729
+        networks:
+            internal:
+            mail:
+            proxy:
+        environment:
+            <<: *php-env
+            COMPOSER_VERSION: ${COMPOSER_VERSION}
+        volumes:
+            - ${WORK_DIR}:${WORK_DIR}:cached
+            - ./php-custom.ini:/usr/local/etc/php/conf.d/zzz-custom.ini:ro
+            - ./smtp:/etc/msmtprc:ro
+            - ./init-laravel.sh:/usr/local/bin/init-laravel.sh:ro
+            - ${CA_STORE:-/usr/local/share/ca-certificates}:/usr/local/share/ca-certificates:ro
+            - ~/.composer:/home/dev/.composer:delegated
+            - ~/.cache/yarn:/home/dev/.cache/yarn:delegated
+            - ~/.npm/_cacache:/home/dev/.npm/_cacache:delegated
+            - ~/.ssh:/home/dev/.ssh:delegated
+            - ~/.config/git:/home/dev/.config/git:delegated
+        extra_hosts: *php-extra-hosts
+        external_links: *php-external-links
+        user: dev
+        tty: true
+        stdin_open: true
+        init: true
+        working_dir: ${WORK_DIR}
+        entrypoint: ["/bin/bash", "-c", "bash /usr/local/bin/init-laravel.sh && tail -f /dev/null"]
+        restart: *restart
+        logging: *logging
+        hostname: cli-${COMPOSE_PROJECT_NAME}-docker
+
+    db:
+        image: rogerdz/${DATABASE_ENGINE}:${DATABASE_ENGINE_VERSION}
+        environment:
+            - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD}
+            - MYSQL_USER=${MYSQL_USER}
+            - MYSQL_PASSWORD=${MYSQL_PASSWORD}
+            - MYSQL_DATABASE=${MYSQL_DATABASE}
+        volumes:
+            - ./mysql.cnf:/etc/mysql/conf.d/custom.cnf:ro
+            - db_data:/var/lib/mysql
+        command: >
+            --innodb-buffer-pool-size=${MYSQL_INNODB_BUFFER_POOL_SIZE:-512M}
+        networks:
+            - internal
+            - database
+        cap_add:
+            - SYS_NICE
+        security_opt:
+            - seccomp:unconfined
+        restart: *restart
+        logging: *logging
+
+
+    adminer_service:
+        image: rogerdz/adminer
+        labels:
+            - traefik.enable=true
+            - traefik.http.routers.adminer-${COMPOSE_PROJECT_NAME}.rule=Host(`${VIRTUAL_HOST}`) && PathPrefix(`/adminer/`)
+            - traefik.http.routers.adminer-${COMPOSE_PROJECT_NAME}.priority=10000
+            - traefik.http.routers.adminer-${COMPOSE_PROJECT_NAME}.entrypoints=http,https
+            - traefik.http.routers.adminer-${COMPOSE_PROJECT_NAME}.middlewares=adminer-stripprefix@file,compression@file
+            - traefik.http.services.adminer-${COMPOSE_PROJECT_NAME}.loadbalancer.server.port=8080
+            # Redirect all http requests to https
+            - traefik.http.routers.adminer-${COMPOSE_PROJECT_NAME}.middlewares=https-redirect@file
+        environment:
+            ADMINER_DEFAULT_USERNAME: ${MYSQL_USER}
+            ADMINER_DEFAULT_PASSWORD: ${MYSQL_PASSWORD}
+            ADMINER_DEFAULT_DATABASE: ${MYSQL_DATABASE}
+        networks:
+            proxy:
+            internal:
+                aliases:
+                    - adminer
+        restart: *restart
+        logging: *logging
+    
+    redis_service:
+        image: rogerdz/${REDIS_SERVICE:-redis}:${REDIS_VERSION}
+        labels:
+            denv.message: "Connect ${REDIS_SERVICE:-redis} service with hostname `${REDIS_SERVICE:-redis}`"
+        command: --maxmemory ${REDIS_MAX_MEMORY:-512mb}
+        networks:
+            internal:
+                aliases:
+                    - redis
+                    - valkey
+        volumes:
+            - redis_data:/data
+        cap_add:
+            - IPC_LOCK
+        restart: *restart
+        logging: *logging
+
+networks:
+    proxy:
+        external: true
+    gateway:
+        external: true
+    database:
+        external: true
+    mail:
+        external: true
+    esnet:
+        external: true
+    internal:
+        driver: bridge
+
+volumes:
+    ? db_data
+    ? redis_data

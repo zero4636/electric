@@ -1,0 +1,48 @@
+http:
+    middlewares:
+        https-redirect:
+            redirectScheme:
+                scheme: https
+                permanent: true
+        allure-redirectregex:
+            redirectregex:
+                regex: '^https?:\/\/([^\/]+)\/allure/$$'
+                replacement: "https:///${1}/allure/allure-docker-service/projects/"
+                permanent: true
+        adminer-stripprefix:
+            stripPrefix:
+                prefixes:
+                    - "/adminer"
+                    - "/adminer/"
+        rabbitmq-stripprefix:
+            stripPrefix:
+                prefixes:
+                    - "/rabbitmq"
+                    - "/rabbitmq/"
+        compression:
+            compress:
+                excludedContentTypes:
+                    - text/event-stream
+                encodings:
+                    - gzip
+        sslOffloaded:
+            headers:
+                customRequestHeaders:
+                    Ssl-Offloaded: "https"
+                    X-Forwarded-Ssl: "on"
+        denvResponseHeader:
+            headers:
+                customResponseHeaders:
+                    X-Denv: 1
+        secHeaders:
+            headers:
+                browserXssFilter: true
+                contentTypeNosniff: true
+                frameDeny: true
+                stsIncludeSubdomains: true
+                stsPreload: true
+                stsSeconds: 31536000
+                customFrameOptionsValue: "SAMEORIGIN"
+                customResponseHeaders:
+                    server: ""
+                    x-powered-by: ""

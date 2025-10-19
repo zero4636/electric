@@ -1,0 +1,57 @@
+global:
+    checkNewVersion: false
+    sendAnonymousUsage: false
+
+api:
+    # insecure: true
+    dashboard: true
+    disabledashboardad: true
+    # debug: true
+
+# accessLog: {}
+
+serversTransport:
+    insecureSkipVerify: true
+    # maxIdleConnsPerHost: 100
+
+# log:
+#     level: DEBUG
+
+entryPoints:
+    http:
+        address: ":80"
+        reusePort: true
+        asDefault: true
+    https:
+        address: ":443"
+        reusePort: true
+        asDefault: true
+        http3: {}
+        http:
+            middlewares:
+                - sslOffloaded@file
+            tls: {}
+            # tls:
+            #     certResolver: letsencrypt
+    p8080:
+        address: ":8080"
+        reusePort: true
+    p9200:
+        address: ":9200"
+        reusePort: true
+providers:
+    docker:
+        network: proxy
+        exposedByDefault: false
+    file:
+        directory: "/etc/traefik/dynamic"
+        watch: true
+
+certificatesResolvers:
+    letsencrypt:
+        acme:
+            caServer: "https://acme-v02.api.letsencrypt.org/directory"
+            email: "webmaster@gmail.com"
+            storage: letsencrypt/acme.json
+            httpChallenge:
+                entryPoint: http
