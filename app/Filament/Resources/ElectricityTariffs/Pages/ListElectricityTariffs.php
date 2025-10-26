@@ -9,11 +9,12 @@ use Filament\Resources\Pages\ListRecords;
 class ListElectricityTariffs extends ListRecords
 {
     protected static string $resource = ElectricityTariffResource::class;
+    protected static ?string $title = 'Danh sách Biểu giá điện';
 
     protected function getHeaderActions(): array
     {
         return [
-            CreateAction::make(),
+            CreateAction::make()->label('Tạo mới'),
         ];
     }
 }

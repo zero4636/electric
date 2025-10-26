@@ -17,7 +17,6 @@ return new class extends Migration
             $table->string('name');
             $table->string('code')->unique()->nullable();
             $table->enum('type',['ORGANIZATION','UNIT','CONSUMER']);
-            $table->tinyInteger('level');
             $table->string('tax_code')->nullable();
             $table->string('email')->nullable();
             $table->text('address')->nullable();

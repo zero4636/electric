@@ -20,6 +20,17 @@ class SubstationResource extends Resource
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;
 
+    protected static ?string $modelLabel = 'Trạm điện';
+    
+    protected static ?string $pluralModelLabel = 'Trạm điện';
+
+    protected static ?string $navigationLabel = 'Trạm điện';
+
+    public static function getNavigationGroup(): ?string
+    {
+        return 'Quản lý thiết bị';
+    }
+
     public static function form(Schema $schema): Schema
     {
         return SubstationForm::configure($schema);

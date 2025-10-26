@@ -9,6 +9,7 @@ use Filament\Resources\Pages\ViewRecord;
 class ViewElectricityTariff extends ViewRecord
 {
     protected static string $resource = ElectricityTariffResource::class;
+    protected static ?string $title = 'Xem Biểu giá điện';
 
     protected function getHeaderActions(): array
     {

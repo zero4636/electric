@@ -9,11 +9,12 @@ use Filament\Resources\Pages\EditRecord;
 class EditMeterReading extends EditRecord
 {
     protected static string $resource = MeterReadingResource::class;
+    protected static ?string $title = 'Sửa Chỉ số công tơ';
 
     protected function getHeaderActions(): array
     {
         return [
-            DeleteAction::make(),
+            DeleteAction::make()->label('Xóa'),
         ];
     }
 }

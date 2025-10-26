@@ -9,11 +9,12 @@ use Filament\Resources\Pages\EditRecord;
 class EditBillDetail extends EditRecord
 {
     protected static string $resource = BillDetailResource::class;
+    protected static ?string $title = 'Sửa Chi tiết hóa đơn';
 
     protected function getHeaderActions(): array
     {
         return [
-            DeleteAction::make(),
+            DeleteAction::make()->label('Xóa'),
         ];
     }
 }

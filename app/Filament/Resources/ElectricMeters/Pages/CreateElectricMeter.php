@@ -8,4 +8,5 @@ use Filament\Resources\Pages\CreateRecord;
 class CreateElectricMeter extends CreateRecord
 {
     protected static string $resource = ElectricMeterResource::class;
+    protected static ?string $title = 'Tạo Công tơ điện';
 }

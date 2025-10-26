@@ -9,6 +9,7 @@ use Filament\Resources\Pages\ViewRecord;
 class ViewBillDetail extends ViewRecord
 {
     protected static string $resource = BillDetailResource::class;
+    protected static ?string $title = 'Xem Chi tiết hóa đơn';
 
     protected function getHeaderActions(): array
     {

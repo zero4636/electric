@@ -8,4 +8,5 @@ use Filament\Resources\Pages\CreateRecord;
 class CreateMeterReading extends CreateRecord
 {
     protected static string $resource = MeterReadingResource::class;
+    protected static ?string $title = 'Tạo Chỉ số công tơ';
 }

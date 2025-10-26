@@ -64,3 +64,26 @@ If you discover a security vulnerability within Laravel, please send an e-mail t
 ## License
 
 The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+
+## Demo installer (project-specific)
+
+This project includes a convenience artisan command to prepare a local demo database and seed it with sample electricity data.
+
+Usage:
+
+	php artisan electric:install-demo
+
+Flags:
+
+- `--yes`    Skip confirmation prompts
+- `--force`  Allow running in production (use with caution)
+
+What it does:
+
+- Copies `.env.example` to `.env` if missing
+- Generates `APP_KEY` if absent
+- Creates `database/database.sqlite` if missing
+- Runs `php artisan migrate --force` and runs the `DatabaseSeeder` (which includes demo data)
+
+The demo seeder is skipped automatically in `production` to avoid accidental data creation.
+

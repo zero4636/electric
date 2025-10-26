@@ -9,11 +9,12 @@ use Filament\Resources\Pages\ListRecords;
 class ListOrganizationUnits extends ListRecords
 {
     protected static string $resource = OrganizationUnitResource::class;
+    protected static ?string $title = 'Danh sách Đơn vị tổ chức';
 
     protected function getHeaderActions(): array
     {
         return [
-            CreateAction::make(),
+            CreateAction::make()->label('Tạo mới'),
         ];
     }
 }

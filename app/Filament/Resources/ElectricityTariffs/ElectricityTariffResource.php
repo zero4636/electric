@@ -19,6 +19,17 @@ class ElectricityTariffResource extends Resource
     protected static ?string $model = ElectricityTariff::class;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;
+    
+    protected static ?string $modelLabel = 'Biểu giá điện';
+    
+    protected static ?string $pluralModelLabel = 'Biểu giá điện';
+
+    protected static ?string $navigationLabel = 'Biểu giá điện';
+
+    public static function getNavigationGroup(): ?string
+    {
+        return 'Quản lý chung';
+    }
 
     public static function form(Schema $schema): Schema
     {

@@ -13,12 +13,24 @@ use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
+use App\Filament\Resources\Bills\RelationManagers\BillDetailsRelationManager;
 
 class BillResource extends Resource
 {
     protected static ?string $model = Bill::class;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;
+
+    protected static ?string $modelLabel = 'Hóa đơn';
+    
+    protected static ?string $pluralModelLabel = 'Hóa đơn';
+
+    protected static ?string $navigationLabel = 'Hóa đơn';
+
+    public static function getNavigationGroup(): ?string
+    {
+        return 'Quản lý hóa đơn';
+    }
 
     public static function form(Schema $schema): Schema
     {
@@ -33,7 +45,7 @@ class BillResource extends Resource
     public static function getRelations(): array
     {
         return [
-            //
+            BillDetailsRelationManager::class,
         ];
     }
 

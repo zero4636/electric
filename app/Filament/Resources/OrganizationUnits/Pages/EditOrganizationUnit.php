@@ -9,11 +9,12 @@ use Filament\Resources\Pages\EditRecord;
 class EditOrganizationUnit extends EditRecord
 {
     protected static string $resource = OrganizationUnitResource::class;
+    protected static ?string $title = 'Sửa Đơn vị tổ chức';
 
     protected function getHeaderActions(): array
     {
         return [
-            DeleteAction::make(),
+            DeleteAction::make()->label('Xóa'),
         ];
     }
 }

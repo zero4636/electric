@@ -19,6 +19,17 @@ class BillDetailResource extends Resource
     protected static ?string $model = BillDetail::class;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;
+    
+    protected static ?string $modelLabel = 'Chi tiết hóa đơn';
+    
+    protected static ?string $pluralModelLabel = 'Chi tiết hóa đơn';
+
+    protected static ?string $navigationLabel = 'Chi tiết hóa đơn';
+
+    public static function getNavigationGroup(): ?string
+    {
+        return 'Quản lý hóa đơn';
+    }
 
     public static function form(Schema $schema): Schema
     {
