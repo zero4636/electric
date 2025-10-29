@@ -13,12 +13,14 @@ use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
+use App\Filament\Resources\ElectricMeters\Schemas\ElectricMeterInfolist;
+use App\Filament\Resources\ElectricMeters\Pages\ViewElectricMeter;
 
 class ElectricMeterResource extends Resource
 {
     protected static ?string $model = ElectricMeter::class;
 
-    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;
+    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedLightBulb;
 
     protected static ?string $modelLabel = 'Công tơ điện';
     
@@ -28,8 +30,10 @@ class ElectricMeterResource extends Resource
 
     public static function getNavigationGroup(): ?string
     {
-        return 'Quản lý thiết bị';
+        return 'Danh mục';
     }
+
+    protected static ?int $navigationSort = 14;
 
     public static function form(Schema $schema): Schema
     {
@@ -39,6 +43,11 @@ class ElectricMeterResource extends Resource
     public static function table(Table $table): Table
     {
         return ElectricMetersTable::configure($table);
+    }
+
+    public static function infolist(Schema $schema): Schema
+    {
+        return ElectricMeterInfolist::configure($schema);
     }
 
     public static function getRelations(): array
@@ -52,6 +61,7 @@ class ElectricMeterResource extends Resource
     {
         return [
             'index' => ListElectricMeters::route('/'),
+            'view' => ViewElectricMeter::route('/{record}'),
             'create' => CreateElectricMeter::route('/create'),
             'edit' => EditElectricMeter::route('/{record}/edit'),
         ];

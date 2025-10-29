@@ -13,12 +13,14 @@ use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
+use App\Filament\Resources\BillDetails\Schemas\BillDetailInfolist;
+use App\Filament\Resources\BillDetails\Pages\ViewBillDetail;
 
 class BillDetailResource extends Resource
 {
     protected static ?string $model = BillDetail::class;
 
-    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;
+    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedListBullet;
     
     protected static ?string $modelLabel = 'Chi tiết hóa đơn';
     
@@ -28,7 +30,15 @@ class BillDetailResource extends Resource
 
     public static function getNavigationGroup(): ?string
     {
-        return 'Quản lý hóa đơn';
+        return 'Hóa đơn';
+    }
+
+    protected static ?int $navigationSort = 32;
+
+    public static function shouldRegisterNavigation(): bool
+    {
+        // Ẩn khỏi menu, quản lý qua quan hệ trong Hóa đơn
+        return false;
     }
 
     public static function form(Schema $schema): Schema
@@ -48,10 +58,16 @@ class BillDetailResource extends Resource
         ];
     }
 
+    public static function infolist(Schema $schema): Schema
+    {
+        return BillDetailInfolist::configure($schema);
+    }
+
     public static function getPages(): array
     {
         return [
             'index' => ListBillDetails::route('/'),
+            'view' => ViewBillDetail::route('/{record}'),
             'create' => CreateBillDetail::route('/create'),
             'edit' => EditBillDetail::route('/{record}/edit'),
         ];

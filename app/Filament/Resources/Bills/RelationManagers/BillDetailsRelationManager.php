@@ -13,6 +13,8 @@ use Filament\Tables\Table;
 use Filament\Actions\CreateAction;
 use Filament\Actions\EditAction;
 use Filament\Actions\DeleteAction;
+use Filament\Actions\ViewAction;
+use App\Filament\Resources\BillDetails\BillDetailResource;
 
 class BillDetailsRelationManager extends RelationManager
 {
@@ -37,6 +39,10 @@ class BillDetailsRelationManager extends RelationManager
                 CreateAction::make()->label('Tạo mới'),
             ])
             ->recordActions([
+                ViewAction::make()
+                    ->label('Xem')
+                    ->url(fn ($record) => BillDetailResource::getUrl('view', ['record' => $record]))
+                    ->openUrlInNewTab(),
                 EditAction::make()->label('Sửa'),
                 DeleteAction::make()->label('Xóa'),
             ]);

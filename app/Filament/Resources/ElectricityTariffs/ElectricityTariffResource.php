@@ -18,7 +18,7 @@ class ElectricityTariffResource extends Resource
 {
     protected static ?string $model = ElectricityTariff::class;
 
-    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;
+    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedCurrencyDollar;
     
     protected static ?string $modelLabel = 'Biểu giá điện';
     
@@ -28,8 +28,10 @@ class ElectricityTariffResource extends Resource
 
     public static function getNavigationGroup(): ?string
     {
-        return 'Quản lý chung';
+        return 'Biểu giá';
     }
+
+    protected static ?int $navigationSort = 42;
 
     public static function form(Schema $schema): Schema
     {

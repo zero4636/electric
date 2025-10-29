@@ -2,6 +2,8 @@
 
 namespace Database\Factories;
 
+use App\Models\Bill;
+use App\Models\ElectricMeter;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
@@ -16,8 +18,18 @@ class BillDetailFactory extends Factory
      */
     public function definition(): array
     {
+        $meter = ElectricMeter::inRandomOrder()->first() ?? ElectricMeter::factory();
+        $consumption = $this->faker->randomFloat(2, 50, 500);
+        $pricePerKwh = $this->faker->randomFloat(2, 2000, 5000);
+        $hsn = $meter->hsn ?? 1;
+
         return [
-            //
+            'bill_id' => Bill::inRandomOrder()->first()->id ?? Bill::factory(),
+            'electric_meter_id' => $meter->id,
+            'consumption' => $consumption,
+            'price_per_kwh' => $pricePerKwh,
+            'hsn' => $hsn,
+            'amount' => $consumption * $pricePerKwh * $hsn,
         ];
     }
 }

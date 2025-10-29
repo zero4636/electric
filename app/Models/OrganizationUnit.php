@@ -14,7 +14,6 @@ class OrganizationUnit extends Model
         'name',
         'code',
         'type',
-        'tax_code',
         'email',
         'address',
         'contact_name',

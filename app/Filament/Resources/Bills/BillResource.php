@@ -19,7 +19,7 @@ class BillResource extends Resource
 {
     protected static ?string $model = Bill::class;
 
-    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;
+    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedDocument;
 
     protected static ?string $modelLabel = 'Hóa đơn';
     
@@ -29,8 +29,10 @@ class BillResource extends Resource
 
     public static function getNavigationGroup(): ?string
     {
-        return 'Quản lý hóa đơn';
+        return 'Hóa đơn';
     }
+
+    protected static ?int $navigationSort = 31;
 
     public static function form(Schema $schema): Schema
     {

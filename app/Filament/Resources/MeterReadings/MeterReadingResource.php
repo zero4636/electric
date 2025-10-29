@@ -18,7 +18,7 @@ class MeterReadingResource extends Resource
 {
     protected static ?string $model = MeterReading::class;
 
-    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;
+    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedChartBar;
     
     protected static ?string $modelLabel = 'Chỉ số công tơ';
     
@@ -28,8 +28,10 @@ class MeterReadingResource extends Resource
 
     public static function getNavigationGroup(): ?string
     {
-        return 'Quản lý vận hành';
+        return 'Vận hành';
     }
+
+    protected static ?int $navigationSort = 21;
 
     public static function form(Schema $schema): Schema
     {

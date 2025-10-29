@@ -5,7 +5,9 @@ namespace App\Filament\Resources\OrganizationUnits;
 use App\Filament\Resources\OrganizationUnits\Pages\CreateOrganizationUnit;
 use App\Filament\Resources\OrganizationUnits\Pages\EditOrganizationUnit;
 use App\Filament\Resources\OrganizationUnits\Pages\ListOrganizationUnits;
+use App\Filament\Resources\OrganizationUnits\Pages\ViewOrganizationUnit;
 use App\Filament\Resources\OrganizationUnits\Schemas\OrganizationUnitForm;
+use App\Filament\Resources\OrganizationUnits\Schemas\OrganizationUnitInfolist;
 use App\Filament\Resources\OrganizationUnits\Tables\OrganizationUnitsTable;
 use App\Models\OrganizationUnit;
 use BackedEnum;
@@ -20,7 +22,7 @@ class OrganizationUnitResource extends Resource
 {
     protected static ?string $model = OrganizationUnit::class;
 
-    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;
+    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedUserGroup;
 
     protected static ?string $modelLabel = 'Đơn vị tổ chức';
     
@@ -30,8 +32,10 @@ class OrganizationUnitResource extends Resource
 
     public static function getNavigationGroup(): ?string
     {
-        return 'Quản lý chung';
+        return 'Danh mục';
     }
+
+    protected static ?int $navigationSort = 11;
 
     public static function form(Schema $schema): Schema
     {
@@ -41,6 +45,11 @@ class OrganizationUnitResource extends Resource
     public static function table(Table $table): Table
     {
         return OrganizationUnitsTable::configure($table);
+    }
+
+    public static function infolist(Schema $schema): Schema
+    {
+        return OrganizationUnitInfolist::configure($schema);
     }
 
     public static function getRelations(): array
@@ -57,6 +66,7 @@ class OrganizationUnitResource extends Resource
             'index' => ListOrganizationUnits::route('/'),
             'create' => CreateOrganizationUnit::route('/create'),
             'edit' => EditOrganizationUnit::route('/{record}/edit'),
+            'view' => ViewOrganizationUnit::route('/{record}'),
         ];
     }
 }

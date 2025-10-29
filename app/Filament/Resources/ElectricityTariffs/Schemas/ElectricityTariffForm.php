@@ -14,30 +14,68 @@ class ElectricityTariffForm
     {
         return $schema
             ->components([
-                Section::make('Biểu giá')
+                Section::make('Thông tin biểu giá')
+                    ->description('Nhập thông tin biểu giá điện')
+                    ->icon('heroicon-o-currency-dollar')
                     ->columns(2)
-                    ->components([
-                        Select::make('tariff_type')
+                    ->schema([
+                        Select::make('tariff_type_id')
                             ->label('Loại biểu giá')
-                            ->options([
-                                'RESIDENTIAL' => 'Sinh hoạt',
-                                'COMMERCIAL' => 'Kinh doanh',
-                                'INDUSTRIAL' => 'Sản xuất',
+                            ->relationship('tariffType', 'name')
+                            ->required()
+                            ->native(false)
+                            ->searchable()
+                            ->preload()
+                            ->createOptionForm([
+                                TextInput::make('code')
+                                    ->label('Mã loại')
+                                    ->required()
+                                    ->unique()
+                                    ->maxLength(50)
+                                    ->regex('/^[A-Z_]+$/'),
+                                TextInput::make('name')
+                                    ->label('Tên loại')
+                                    ->required()
+                                    ->maxLength(100),
+                                Select::make('color')
+                                    ->label('Màu sắc')
+                                    ->required()
+                                    ->options([
+                                        'primary' => 'Primary',
+                                        'success' => 'Success',
+                                        'warning' => 'Warning',
+                                        'danger' => 'Danger',
+                                        'info' => 'Info',
+                                    ])
+                                    ->default('primary'),
                             ])
-                            ->required(),
+                            ->helperText('Chọn hoặc tạo mới loại biểu giá'),
 
                         TextInput::make('price_per_kwh')
-                            ->label('Giá/kWh')
+                            ->label('Giá điện (VNĐ/kWh)')
                             ->numeric()
-                            ->required(),
+                            ->required()
+                            ->minValue(0)
+                            ->maxValue(999999999)
+                            ->suffix('VNĐ')
+                            ->placeholder('Ví dụ: 2500')
+                            ->helperText('Nhập giá tiền trên mỗi kWh'),
 
                         DatePicker::make('effective_from')
-                            ->label('Hiệu lực từ')
-                            ->required(),
+                            ->label('Hiệu lực từ ngày')
+                            ->required()
+                            ->native(false)
+                            ->displayFormat('d/m/Y')
+                            ->closeOnDateSelection()
+                            ->default(now()),
 
                         DatePicker::make('effective_to')
-                            ->label('Hiệu lực đến')
-                            ->nullable(),
+                            ->label('Hiệu lực đến ngày')
+                            ->native(false)
+                            ->displayFormat('d/m/Y')
+                            ->closeOnDateSelection()
+                            ->after('effective_from')
+                            ->helperText('Để trống nếu không có ngày kết thúc'),
                     ]),
             ]);
     }

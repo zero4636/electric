@@ -16,7 +16,8 @@ return new class extends Migration
             $table->foreignId('electric_meter_id')->constrained()->cascadeOnDelete();
             $table->date('reading_date');
             $table->decimal('reading_value',10,2);
-            $table->decimal('hsn',8,2)->default(1.0);
+            $table->string('reader_name')->nullable(); // Người ghi
+            $table->text('notes')->nullable(); // Ghi chú
             $table->timestamps();
         });
     }

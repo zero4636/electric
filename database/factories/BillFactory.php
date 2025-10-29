@@ -2,6 +2,7 @@
 
 namespace Database\Factories;
 
+use App\Models\OrganizationUnit;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
@@ -17,7 +18,10 @@ class BillFactory extends Factory
     public function definition(): array
     {
         return [
-            //
+            'organization_unit_id' => OrganizationUnit::inRandomOrder()->first()->id ?? OrganizationUnit::factory(),
+            'billing_date' => $this->faker->dateTimeBetween('-3 months', 'now'),
+            'total_amount' => $this->faker->randomFloat(2, 100, 5000),
+            'status' => $this->faker->randomElement(['PENDING', 'PAID', 'CANCELLED']),
         ];
     }
 }

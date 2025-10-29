@@ -65,10 +65,6 @@ class OrganizationUnitForm
                 Section::make('Thông tin thêm')
                     ->columns(1)
                     ->components([
-                        TextInput::make('tax_code')
-                            ->label('Mã số thuế')
-                            ->nullable(),
-
                         Textarea::make('notes')
                             ->label('Ghi chú')
                             ->nullable(),

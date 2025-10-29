@@ -1,89 +1,258 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# 🔌 Hệ Thống Quản Lý Điện - Electricity Management System
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+Một ứng dụng web quản lý điện năng toàn diện được xây dựng bằng **Laravel 11** và **Filament Admin Panel**. Hệ thống cung cấp giải pháp quản lý công tơ điện, đơn vị tổ chức, hóa đơn, biểu giá, và báo cáo tiêu thụ điện.
 
-## About Laravel
+## 🎯 Tính Năng Chính
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+### 📊 Quản Lý Dữ Liệu Cơ Bản
+- **Danh mục**: Quản lý tòa nhà, đơn vị tổ chức, trạm biến áp, loại biểu giá
+- **Vận hành**: Quản lý công tơ điện, chỉ số công tơ
+- **Hóa đơn**: Tạo và quản lý hóa đơn, chi tiết hóa đơn
+- **Biểu giá**: Quản lý biểu giá điện, loại khách hàng
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+### 🏢 Quản Lý Tòa Nhà (Buildings)
+- Tạo, sửa, xóa thông tin tòa nhà
+- Liên kết với trạm biến áp
+- Quản lý số tầng, mã tòa nhà
+- Xem danh sách công tơ điện trong tòa nhà
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+### 🏛️ Quản Lý Đơn Vị Tổ Chức (Organization Units)
+- Hỗ trợ cấu trúc phân cấp (cha-con)
+- Quản lý loại đơn vị: ORGANIZATION, UNIT, CONSUMER
+- Liên kết công tơ điện và hóa đơn
+- Xem danh sách hóa đơn của mỗi đơn vị
 
-## Learning Laravel
+### ⚡ Quản Lý Công Tơ Điện (Electric Meters)
+- Tạo và quản lý công tơ
+- Liên kết với đơn vị tổ chức, tòa nhà, trạm biến áp
+- Phân loại: RESIDENTIAL, COMMERCIAL, INDUSTRIAL
+- Xem chi tiết và lịch sử chỉ số
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
+### 📈 Quản Lý Chỉ Số Công Tơ (Meter Readings)
+- Ghi chỉ số định kỳ (hàng tháng)
+- Tính toán tiêu thụ điện
+- Lịch sử đầy đủ của từng công tơ
 
-You may also try the [Laravel Bootcamp](https://bootcamp.laravel.com), where you will be guided through building a modern Laravel application from scratch.
+### 💰 Quản Lý Hóa Đơn (Bills)
+- Tạo hóa đơn tự động từ chỉ số công tơ
+- Quản lý chi tiết hóa đơn (consumption, price, amount)
+- Trạng thái: PENDING, PAID, CANCELLED
+- Xem chi tiết từng dòng hóa đơn
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+### 📊 Quản Lý Biểu Giá (Electricity Tariffs)
+- Quản lý giá điện theo loại khách hàng
+- Ngày hiệu lực
+- Lịch sử thay đổi giá
 
-## Laravel Sponsors
+## 🛠️ Công Nghệ Sử Dụng
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the [Laravel Partners program](https://partners.laravel.com).
+| Thành Phần | Công Nghệ |
+|-----------|----------|
+| Backend | Laravel 11.46.1 |
+| Admin Panel | Filament PHP |
+| Database | MariaDB 11.4.2 |
+| Frontend Build | Vite |
+| CSS Framework | Tailwind CSS 3.4 |
+| Containerization | Docker |
 
-### Premium Partners
+## 📋 Yêu Cầu Hệ Thống
 
-- **[Vehikl](https://vehikl.com/)**
-- **[Tighten Co.](https://tighten.co)**
-- **[WebReinvent](https://webreinvent.com/)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel/)**
-- **[Cyber-Duck](https://cyber-duck.co.uk)**
-- **[DevSquad](https://devsquad.com/hire-laravel-developers)**
-- **[Jump24](https://jump24.co.uk)**
-- **[Redberry](https://redberry.international/laravel/)**
-- **[Active Logic](https://activelogic.com)**
-- **[byte5](https://byte5.de)**
-- **[OP.GG](https://op.gg)**
+- PHP >= 8.2
+- Composer
+- Node.js >= 18
+- Docker & Docker Compose (optional)
+- MariaDB >= 10.6
 
-## Contributing
+## 🚀 Cài Đặt & Thiết Lập
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+### 1. Clone Repository
+```bash
+git clone <repository-url>
+cd electric
+```
 
-## Code of Conduct
+### 2. Cài Đặt Dependencies
+```bash
+composer install
+npm install
+```
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+### 3. Tạo File Environment
+```bash
+cp .env.example .env
+php artisan key:generate
+```
 
-## Security Vulnerabilities
+### 4. Cấu Hình Database
+Chỉnh sửa file `.env`:
+```env
+DB_CONNECTION=mysql
+DB_HOST=127.0.0.1
+DB_PORT=3306
+DB_DATABASE=electric_db
+DB_USERNAME=root
+DB_PASSWORD=
+```
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+### 5. Chạy Migrations
+```bash
+php artisan migrate
+```
 
-## License
+### 6. Seed Dữ Liệu Mẫu (Một Lệnh Duy Nhất)
+```bash
+php artisan db:seed
+```
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+**Lệnh này sẽ tạo tất cả dữ liệu mẫu:**
+- ✅ 1 tài khoản Admin (admin@example.com / password)
+- ✅ 3 loại biểu giá (Dân cư, Thương mại, Công nghiệp)
+- ✅ 3 biểu giá điện
+- ✅ 11 trạm biến áp
+- ✅ 15 tòa nhà
+- ✅ 10 đơn vị tổ chức
+- ✅ 9 công tơ điện
+- ✅ 18 chỉ số công tơ
+- ✅ 12 hóa đơn với chi tiết
 
-## Demo installer (project-specific)
+### 7. Xây Dựng Assets
+```bash
+npm run build
+```
 
-This project includes a convenience artisan command to prepare a local demo database and seed it with sample electricity data.
+### 8. Chạy Development Server
+```bash
+php artisan serve
+```
 
-Usage:
+Truy cập: http://localhost:8000
 
-	php artisan electric:install-demo
+## 🐳 Chạy Bằng Docker
 
-Flags:
+### Sử Dụng Docker Compose
+```bash
+cd docker/environment
+docker-compose up -d
+```
 
-- `--yes`    Skip confirmation prompts
-- `--force`  Allow running in production (use with caution)
+### Chạy Lệnh Artisan
+```bash
+docker-compose exec cli php artisan migrate
+docker-compose exec cli php artisan db:seed
+```
 
-What it does:
+## 📂 Cấu Trúc Dự Án
 
-- Copies `.env.example` to `.env` if missing
-- Generates `APP_KEY` if absent
-- Creates `database/database.sqlite` if missing
-- Runs `php artisan migrate --force` and runs the `DatabaseSeeder` (which includes demo data)
+```
+electric/
+├── app/
+│   ├── Filament/         # Admin Panel Resources (9 resources)
+│   │   └── Resources/
+│   │       ├── Buildings/
+│   │       ├── Bills/
+│   │       ├── OrganizationUnits/
+│   │       ├── ElectricMeters/
+│   │       ├── MeterReadings/
+│   │       ├── ElectricityTariffs/
+│   │       ├── TariffTypes/
+│   │       ├── Substations/
+│   │       └── Users/
+│   ├── Models/          # Eloquent Models (9 models)
+│   ├── Services/        # Business Logic
+│   ├── Helpers/         # Helper Functions
+│   └── Providers/       # Service Providers
+├── database/
+│   ├── migrations/      # Database Migrations (35+ indexes)
+│   ├── seeders/         # DatabaseSeeder (tất cả trong 1 file)
+│   └── factories/       # Model Factories
+├── resources/
+│   ├── css/            # Tailwind CSS (Professional design)
+│   └── js/             # Frontend JS
+├── docker/             # Docker Configuration
+├── config/             # Configuration Files
+└── routes/             # Route Definitions
+```
 
-The demo seeder is skipped automatically in `production` to avoid accidental data creation.
+## 🗄️ Cấu Trúc Database
+
+### Bảng Chính
+
+| Bảng | Mô Tả | Relationships |
+|------|-------|---------------|
+| `users` | Tài khoản người dùng | - |
+| `tariff_types` | Loại biểu giá | Has many ElectricityTariffs |
+| `electricity_tariffs` | Biểu giá điện | Belongs to TariffType |
+| `substations` | Trạm biến áp | Has many Buildings, ElectricMeters |
+| `buildings` | Tòa nhà | Belongs to Substation, Has many ElectricMeters |
+| `organization_units` | Đơn vị tổ chức | Hierarchical, Has many ElectricMeters, Bills |
+| `electric_meters` | Công tơ điện | Belongs to OrganizationUnit/Building/Substation, Has many Readings/BillDetails |
+| `meter_readings` | Chỉ số công tơ | Belongs to ElectricMeter |
+| `bills` | Hóa đơn | Belongs to OrganizationUnit, Has many BillDetails |
+| `bill_details` | Chi tiết hóa đơn | Belongs to Bill, ElectricMeter |
+
+### Indexes (35+)
+- Primary keys trên tất cả bảng
+- Foreign keys tối ưu hóa
+- Indexes trên các trường tìm kiếm thường xuyên
+- Composite indexes cho queries phức tạp
+
+Chi tiết đầy đủ xem trong `DATABASE_DESIGN.md`
+
+## 👤 Đăng Nhập Admin Panel
+
+**URL**: http://localhost:8000/admin
+
+**Tài khoản mặc định**:
+- Email: `admin@example.com`
+- Password: `password`
+
+## 🎨 Thiết Kế UI/UX
+
+- **Color Scheme**: Blue primary, Slate background (light & dark mode)
+- **Border Radius**: rounded-lg (8px) - Professional yet modern
+- **Components**: Border-based styling, minimal shadows
+- **Responsiveness**: Fully responsive, mobile-friendly
+- **Typography**: Inter font family
+- **Max Width**: 8xl (90rem)
+
+## 📝 Navigation Groups
+
+| Nhóm | Mục | Tổng |
+|-----|------|------|
+| **Danh mục** | Đơn vị tổ chức, Tòa nhà, Trạm điện, Loại biểu giá | 4 items |
+| **Vận hành** | Công tơ điện, Chỉ số công tơ | 2 items |
+| **Hóa đơn** | Hóa đơn, Chi tiết hóa đơn | 2 items |
+| **Biểu giá** | Biểu giá điện, Loại biểu giá | 2 items |
+
+## 🔒 Bảo Mật
+
+- CSRF protection
+- SQL Injection prevention (Eloquent ORM)
+- XSS protection (Blade template escaping)
+- Password hashing (Bcrypt)
+- Input validation & sanitization
+- Authorization checks
+
+## 📚 Tài Liệu
+
+- **DATABASE_DESIGN.md** - Schema, relationships, migrations chi tiết
+- **README.md** - Tài liệu này
+- Inline code documentation & comments
+
+## 🤝 Contributing
+
+Contributions welcome! Vui lòng:
+1. Fork repository
+2. Tạo feature branch
+3. Commit changes
+4. Push to branch
+5. Mở Pull Request
+
+## 📄 License
+
+MIT License - xem file LICENSE
+
+---
+
+**Phiên bản**: 1.0.0 | **Cập nhật**: October 2025
 
