@@ -1,5 +1,0 @@
-# Ignore tất cả file CSV trong thư mục này
-*.csv
-
-# Trừ file mẫu (nếu có)
-!.gitignore

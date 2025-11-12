@@ -21,9 +21,8 @@ use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\DB;
 
-class GenerateBills extends Page implements HasForms, HasSchemas, HasTable
+class GenerateBills extends Page implements HasSchemas, HasTable
 {
-    use InteractsWithForms;
     use InteractsWithSchemas;
     use InteractsWithTable;
 

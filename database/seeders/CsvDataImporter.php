@@ -6,6 +6,7 @@ use App\Models\ElectricMeter;
 use App\Models\MeterReading;
 use App\Models\OrganizationUnit;
 use App\Models\Substation;
+use App\Models\TariffType;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -317,12 +318,18 @@ class CsvDataImporter extends Seeder
                     $meterType = 'RESIDENTIAL';
                 }
                 
+                // Get tariff type ID based on meter type
+                $tariffTypeCode = $meterType === 'RESIDENTIAL' ? 'RESIDENTIAL' : 'COMMERCIAL';
+                $tariffType = TariffType::where('code', $tariffTypeCode)->first();
+                $tariffTypeId = $tariffType ? $tariffType->id : null;
+                
                 // Create or update electric meter
                 $meter = ElectricMeter::updateOrCreate(
                     ['meter_number' => $row['meter_number']],
                     [
                         'organization_unit_id' => $org->id,
                         'substation_id' => $substation->id,
+                        'tariff_type_id' => $tariffTypeId,
                         'building' => $row['building'],
                         'floor' => $row['floor'],
                         'installation_location' => $row['installation_location'],
