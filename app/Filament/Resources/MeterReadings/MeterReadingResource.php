@@ -5,6 +5,7 @@ namespace App\Filament\Resources\MeterReadings;
 use App\Filament\Resources\MeterReadings\Pages\CreateMeterReading;
 use App\Filament\Resources\MeterReadings\Pages\EditMeterReading;
 use App\Filament\Resources\MeterReadings\Pages\ListMeterReadings;
+use App\Filament\Resources\MeterReadings\Pages\ViewMeterReading;
 use App\Filament\Resources\MeterReadings\Schemas\MeterReadingForm;
 use App\Filament\Resources\MeterReadings\Tables\MeterReadingsTable;
 use App\Models\MeterReading;
@@ -55,7 +56,9 @@ class MeterReadingResource extends Resource
         return [
             'index' => ListMeterReadings::route('/'),
             'create' => CreateMeterReading::route('/create'),
-            'edit' => EditMeterReading::route('/{record}/edit'),
+            'view' => ViewMeterReading::route('/{record}'),
+            // Edit bị tắt - chỉ số công tơ là dữ liệu lịch sử không nên sửa
+            // 'edit' => EditMeterReading::route('/{record}/edit'),
         ];
     }
 }

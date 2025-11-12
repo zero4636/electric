@@ -5,6 +5,7 @@ namespace App\Filament\Resources\ElectricityTariffs\Schemas;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Select;
+use Filament\Forms\Components\ColorPicker;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
 
@@ -37,17 +38,10 @@ class ElectricityTariffForm
                                     ->label('Tên loại')
                                     ->required()
                                     ->maxLength(100),
-                                Select::make('color')
+                                ColorPicker::make('color')
                                     ->label('Màu sắc')
                                     ->required()
-                                    ->options([
-                                        'primary' => 'Primary',
-                                        'success' => 'Success',
-                                        'warning' => 'Warning',
-                                        'danger' => 'Danger',
-                                        'info' => 'Info',
-                                    ])
-                                    ->default('primary'),
+                                    ->helperText('Chọn mã màu (hex), ví dụ: #0ea5e9'),
                             ])
                             ->helperText('Chọn hoặc tạo mới loại biểu giá'),
 

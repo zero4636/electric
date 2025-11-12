@@ -2,9 +2,11 @@
 
 namespace App\Filament\Resources\Substations\Schemas;
 
+use App\Filament\Resources\ElectricMeters\ElectricMeterResource;
 use Filament\Schemas\Schema;
 use Filament\Schemas\Components\Section;
 use Filament\Infolists\Components\TextEntry;
+use Filament\Infolists\Components\RepeatableEntry;
 
 class SubstationInfolist
 {
@@ -12,7 +14,7 @@ class SubstationInfolist
     {
         return $schema
             ->components([
-                Section::make('Thông tin trạm')
+                Section::make('Thông tin trạm biến áp / Khu vực')
                     ->columns(3)
                     ->components([
                         TextEntry::make('name')
@@ -35,29 +37,37 @@ class SubstationInfolist
                     ]),
 
                 Section::make('Vị trí')
-                    ->columns(1)
+                    ->columns(2)
                     ->components([
                         TextEntry::make('location')
-                            ->label('Địa chỉ')
-                            ->columnSpanFull(),
+                            ->label('Khu vực')
+                            ->placeholder('—'),
+                        TextEntry::make('address')
+                            ->label('Địa chỉ chi tiết')
+                            ->placeholder('—'),
                     ]),
 
-                Section::make('Công tơ điện')
-                    ->columns(1)
+                // Danh sách công tơ được chuyển sang thẻ Quan hệ (Relation Manager) bên dưới để hỗ trợ phân trang
+                Section::make('Tổng quan công tơ')
+                    ->icon('heroicon-o-bolt')
+                    ->columns(3)
                     ->components([
-                        TextEntry::make('meterCount')
-                            ->label('Số công tơ')
-                            ->getStateUsing(function ($record) {
-                                return $record->electricMeters()->count();
-                            }),
-                    ]),
-
-                Section::make('Ghi chú')
-                    ->components([
-                        TextEntry::make('notes')
-                            ->label('Ghi chú')
-                            ->placeholder('—')
-                            ->columnSpanFull(),
+                        TextEntry::make('meters_count')
+                            ->label('Tổng số công tơ')
+                            ->getStateUsing(fn ($record) => $record->electricMeters()->count())
+                            ->badge()
+                            ->color('info')
+                            ->weight('bold'),
+                        TextEntry::make('active_meters')
+                            ->label('Đang hoạt động')
+                            ->getStateUsing(fn ($record) => $record->electricMeters()->where('status', 'ACTIVE')->count())
+                            ->badge()
+                            ->color('success'),
+                        TextEntry::make('inactive_meters')
+                            ->label('Ngừng hoạt động')
+                            ->getStateUsing(fn ($record) => $record->electricMeters()->where('status', 'INACTIVE')->count())
+                            ->badge()
+                            ->color('danger'),
                     ]),
             ]);
     }

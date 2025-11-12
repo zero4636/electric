@@ -5,6 +5,7 @@ namespace App\Filament\Resources\TariffTypes\Schemas;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\Select;
+use Filament\Forms\Components\ColorPicker;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
 
@@ -37,25 +38,16 @@ class TariffTypeForm
                             ->maxLength(100)
                             ->placeholder('VD: Dân cư, Thương mại'),
 
-                        Select::make('color')
+                        ColorPicker::make('color')
                             ->label('Màu sắc')
                             ->required()
-                            ->options([
-                                'primary' => 'Xanh dương (Primary)',
-                                'success' => 'Xanh lá (Success)',
-                                'warning' => 'Vàng cam (Warning)',
-                                'danger' => 'Đỏ (Danger)',
-                                'info' => 'Xanh nhạt (Info)',
-                            ])
-                            ->default('primary')
-                            ->native(false)
-                            ->helperText('Màu hiển thị badge trong bảng'),
+                            ->helperText('Chọn mã màu (hex), ví dụ: #0ea5e9'),
 
                         TextInput::make('icon')
                             ->label('Icon')
                             ->maxLength(50)
                             ->placeholder('VD: heroicon-o-bolt')
-                            ->helperText('Tên icon Heroicon (tùy chọn)'),
+                            ->helperText('Tên icon Heroicons (tùy chọn). Tham khảo: https://heroicons.com (dùng tiền tố heroicon-o- hoặc heroicon-s-)'),
 
                         TextInput::make('sort_order')
                             ->label('Thứ tự')

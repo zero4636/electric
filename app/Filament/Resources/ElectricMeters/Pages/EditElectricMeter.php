@@ -17,4 +17,13 @@ class EditElectricMeter extends EditRecord
             DeleteAction::make()->label('Xóa'),
         ];
     }
+
+    protected function getRedirectUrl(): string
+    {
+        $pages = $this->getResource()::getPages();
+        if (isset($pages['view'])) {
+            return $this->getResource()::getUrl('view', ['record' => $this->getRecord()]);
+        }
+        return $this->getResource()::getUrl('index');
+    }
 }

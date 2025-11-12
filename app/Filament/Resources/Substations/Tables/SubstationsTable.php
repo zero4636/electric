@@ -3,17 +3,15 @@
 namespace App\Filament\Resources\Substations\Tables;
 
 use Filament\Actions\BulkActionGroup;
-use Filament\Actions\CreateAction;
 use Filament\Actions\DeleteBulkAction;
-use Filament\Actions\EditAction;
-use Filament\Actions\ViewAction;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Columns\BadgeColumn;
+use Filament\Tables\Filters\TernaryFilter;
 use Filament\Tables\Table;
 
 class SubstationsTable
 {
-    public static function configure(Table $table): Table
+    public static function table(Table $table): Table
     {
         return $table
             ->columns([
@@ -22,33 +20,33 @@ class SubstationsTable
                     ->searchable()
                     ->sortable()
                     ->copyable()
-                    ->weight('bold'),
+                    ->weight('bold')
+                    ->icon('heroicon-o-bolt'),
+                    
                 TextColumn::make('name')
-                    ->label('Tên trạm')
+                    ->label('Tên trạm biến áp')
                     ->searchable()
                     ->sortable()
                     ->limit(35)
                     ->wrap()
-                    ->tooltip(fn ($record) => $record->name),
+                    ->description(fn ($record) => $record->location),
+                    
                 TextColumn::make('location')
                     ->label('Vị trí')
                     ->searchable()
                     ->limit(40)
                     ->wrap()
-                    ->tooltip(fn ($record) => $record->location)
-                    ->placeholder('—'),
-                TextColumn::make('buildings_count')
-                    ->label('Số tòa nhà')
-                    ->getStateUsing(fn($record) => $record->buildings()->count())
+                    ->placeholder('—')
+                    ->toggleable(isToggledHiddenByDefault: true),
+                    
+                TextColumn::make('electric_meters_count')
+                    ->label('Mã công tơ')
+                    ->counts('electricMeters')
                     ->alignCenter()
                     ->badge()
-                    ->color('success'),
-                TextColumn::make('electricMeters_count')
-                    ->label('Số công tơ')
-                    ->getStateUsing(fn($record) => $record->electricMeters()->count())
-                    ->alignCenter()
-                    ->badge()
-                    ->color('info'),
+                    ->color('info')
+                    ->sortable(),
+                    
                 BadgeColumn::make('status')
                     ->label('Trạng thái')
                     ->colors([
@@ -56,25 +54,46 @@ class SubstationsTable
                         'danger' => 'INACTIVE',
                     ])
                     ->formatStateUsing(fn (string $state): string => match ($state) {
-                        'ACTIVE' => '✓',
-                        'INACTIVE' => '✗',
+                        'ACTIVE' => 'Hoạt động',
+                        'INACTIVE' => 'Ngừng',
                         default => $state,
                     })
                     ->sortable(),
+                    
+                TextColumn::make('created_at')
+                    ->label('Ngày tạo')
+                    ->dateTime('d/m/Y H:i')
+                    ->sortable()
+                    ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
-                //
+                TernaryFilter::make('status')
+                    ->label('Trạng thái')
+                    ->placeholder('Tất cả')
+                    ->trueLabel('Hoạt động')
+                    ->falseLabel('Ngừng hoạt động')
+                    ->queries(
+                        true: fn ($query) => $query->where('status', 'ACTIVE'),
+                        false: fn ($query) => $query->where('status', 'INACTIVE'),
+                    ),
+                    
+                TernaryFilter::make('has_meters')
+                    ->label('Có công tơ')
+                    ->placeholder('Tất cả')
+                    ->trueLabel('Có công tơ')
+                    ->falseLabel('Chưa có công tơ')
+                    ->queries(
+                        true: fn ($query) => $query->has('electricMeters'),
+                        false: fn ($query) => $query->doesntHave('electricMeters'),
+                    ),
             ])
-            ->recordActions([
-                ViewAction::make(),
-                EditAction::make(),
-            ])
-            ->toolbarActions([
-                CreateAction::make()
-                    ->label('Tạo Trạm điện mới'),
+            ->bulkActions([
                 BulkActionGroup::make([
                     DeleteBulkAction::make(),
                 ]),
-            ]);
+            ])
+            ->defaultSort('code', 'asc')
+            ->striped()
+            ->paginated([10, 25, 50]);
     }
 }

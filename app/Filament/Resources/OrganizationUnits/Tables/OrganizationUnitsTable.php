@@ -6,46 +6,32 @@ use Filament\Tables\Table;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Columns\BadgeColumn;
 use Filament\Tables\Filters\SelectFilter;
-use Filament\Actions\CreateAction;
-use Filament\Actions\EditAction;
-use Filament\Actions\ViewAction;
+use Filament\Tables\Filters\TernaryFilter;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
-use Illuminate\Support\Facades\DB;
 
 class OrganizationUnitsTable
 {
-    public static function configure(Table $table): Table
+    public static function table(Table $table): Table
     {
         return $table
             ->columns([
-                TextColumn::make('name')
-                    ->label('Tên đơn vị')
-                    ->formatStateUsing(fn($state, $record) => str_repeat('—— ', $record->depth) . $state)
-                    ->searchable()
-                    ->sortable()
-                    ->wrap(),
                 TextColumn::make('code')
                     ->label('Mã')
                     ->searchable()
                     ->sortable()
-                    ->copyable(),
-                TextColumn::make('parent.name')
-                    ->label('Đơn vị cha')
-                    ->sortable(query: function ($query, $direction) {
-                        return $query
-                            ->leftJoin('organization_units as parent_units', 'organization_units.parent_id', '=', 'parent_units.id')
-                            ->orderBy('parent_units.name', $direction)
-                            ->select('organization_units.*');
-                    })
-                    ->limit(25)
+                    ->copyable()
+                    ->weight('medium')
                     ->placeholder('—'),
-                TextColumn::make('meters_count')
-                    ->label('Số công tơ')
-                    ->getStateUsing(fn($record) => $record->electricMeters()->count())
-                    ->badge()
-                    ->color('info')
-                    ->alignCenter(),
+                    
+                TextColumn::make('name')
+                    ->label('Tên đơn vị/Hộ tiêu thụ')
+                    ->searchable()
+                    ->sortable()
+                    ->weight('bold')
+                    ->wrap()
+                    ->limit(50),
+                    
                 BadgeColumn::make('type')
                     ->label('Loại')
                     ->colors([
@@ -56,10 +42,48 @@ class OrganizationUnitsTable
                     ->formatStateUsing(fn (string $state): string => match ($state) {
                         'ORGANIZATION' => 'Tổ chức',
                         'UNIT' => 'Đơn vị',
-                        'CONSUMER' => 'Khách hàng',
+                        'CONSUMER' => 'Hộ tiêu thụ',
                         default => $state,
                     })
                     ->sortable(),
+                    
+                TextColumn::make('parent.name')
+                    ->label('Đơn vị cấp trên')
+                    ->searchable()
+                    ->limit(30)
+                    ->placeholder('—')
+                    ->toggleable(),
+                    
+                TextColumn::make('contact_name')
+                    ->label('Người đại diện')
+                    ->searchable()
+                    ->placeholder('—')
+                    ->toggleable(),
+                    
+                TextColumn::make('contact_phone')
+                    ->label('Điện thoại')
+                    ->searchable()
+                    ->copyable()
+                    ->placeholder('—')
+                    ->icon('heroicon-o-phone')
+                    ->toggleable(),
+                    
+                TextColumn::make('address')
+                    ->label('Địa chỉ')
+                    ->searchable()
+                    ->limit(40)
+                    ->placeholder('—')
+                    ->wrap()
+                    ->toggleable(isToggledHiddenByDefault: true),
+                    
+                TextColumn::make('electric_meters_count')
+                    ->label('Mã công tơ')
+                    ->counts('electricMeters')
+                    ->badge()
+                    ->color('info')
+                    ->alignCenter()
+                    ->sortable(),
+                    
                 BadgeColumn::make('status')
                     ->label('Trạng thái')
                     ->colors([
@@ -67,35 +91,66 @@ class OrganizationUnitsTable
                         'danger' => 'INACTIVE',
                     ])
                     ->formatStateUsing(fn (string $state): string => match ($state) {
-                        'ACTIVE' => '✓',
-                        'INACTIVE' => '✗',
+                        'ACTIVE' => 'Hoạt động',
+                        'INACTIVE' => 'Ngừng',
                         default => $state,
                     })
                     ->sortable(),
+                    
+                TextColumn::make('created_at')
+                    ->label('Ngày tạo')
+                    ->dateTime('d/m/Y H:i')
+                    ->sortable()
+                    ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
                 SelectFilter::make('type')
+                    ->label('Loại đơn vị')
                     ->options([
                         'ORGANIZATION' => 'Tổ chức',
                         'UNIT' => 'Đơn vị',
-                        'CONSUMER' => 'Khách hàng',
-                    ]),
-                SelectFilter::make('status')
-                    ->options([
-                        'ACTIVE' => 'Hoạt động',
-                        'INACTIVE' => 'Ngừng hoạt động',
-                    ]),
+                        'CONSUMER' => 'Hộ tiêu thụ',
+                    ])
+                    ->multiple(),
+                    
+                SelectFilter::make('parent_id')
+                    ->label('Đơn vị cấp trên')
+                    ->options(function () {
+                        return \App\Models\OrganizationUnit::query()
+                            ->whereNull('parent_id')
+                            ->orWhereHas('children')
+                            ->orderBy('name')
+                            ->pluck('name', 'id');
+                    })
+                    ->searchable(),
+                    
+                TernaryFilter::make('status')
+                    ->label('Trạng thái')
+                    ->placeholder('Tất cả')
+                    ->trueLabel('Hoạt động')
+                    ->falseLabel('Ngừng hoạt động')
+                    ->queries(
+                        true: fn ($query) => $query->where('status', 'ACTIVE'),
+                        false: fn ($query) => $query->where('status', 'INACTIVE'),
+                    ),
+                    
+                TernaryFilter::make('has_meters')
+                    ->label('Có công tơ')
+                    ->placeholder('Tất cả')
+                    ->trueLabel('Có công tơ')
+                    ->falseLabel('Chưa có công tơ')
+                    ->queries(
+                        true: fn ($query) => $query->has('electricMeters'),
+                        false: fn ($query) => $query->doesntHave('electricMeters'),
+                    ),
             ])
-            ->recordActions([
-                ViewAction::make(),
-                EditAction::make(),
-            ])
-            ->toolbarActions([
-                CreateAction::make()
-                    ->label('Tạo Đơn vị tổ chức mới'),
+            ->bulkActions([
                 BulkActionGroup::make([
                     DeleteBulkAction::make(),
                 ]),
-            ]);
+            ])
+            ->defaultSort('name', 'asc')
+            ->striped()
+            ->paginated([10, 25, 50, 100]);
     }
 }

@@ -22,11 +22,11 @@ class SubstationResource extends Resource
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedBolt;
 
-    protected static ?string $modelLabel = 'Trạm điện';
+    protected static ?string $modelLabel = 'Trạm biến áp';
     
-    protected static ?string $pluralModelLabel = 'Trạm điện';
+    protected static ?string $pluralModelLabel = 'Trạm biến áp';
 
-    protected static ?string $navigationLabel = 'Trạm điện';
+    protected static ?string $navigationLabel = 'Trạm biến áp';
 
     public static function getNavigationGroup(): ?string
     {
@@ -42,7 +42,7 @@ class SubstationResource extends Resource
 
     public static function table(Table $table): Table
     {
-        return SubstationsTable::configure($table);
+        return SubstationsTable::table($table);
     }
 
     public static function infolist(Schema $schema): Schema
@@ -53,7 +53,7 @@ class SubstationResource extends Resource
     public static function getRelations(): array
     {
         return [
-            //
+            \App\Filament\Resources\Substations\RelationManagers\ElectricMetersRelationManager::class,
         ];
     }
 

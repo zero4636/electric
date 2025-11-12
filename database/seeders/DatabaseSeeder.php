@@ -2,7 +2,6 @@
 
 namespace Database\Seeders;
 
-use App\Models\Building;
 use App\Models\Bill;
 use App\Models\BillDetail;
 use App\Models\ElectricityTariff;
@@ -41,21 +40,17 @@ class DatabaseSeeder extends Seeder
         $this->command->info('💰 Tạo biểu giá điện...');
         $this->createTariffs();
 
-        // 4. Create substations
-        $this->command->info('📍 Tạo trạm biến áp...');
+        // 4. Create substations (khu vực)
+        $this->command->info('📍 Tạo trạm biến áp / Khu vực...');
         $substations = $this->createSubstations();
 
-        // 5. Create buildings
-        $this->command->info('🏢 Tạo tòa nhà...');
-        $buildings = $this->createBuildings($substations);
-
-        // 6. Create organization units
+        // 5. Create organization units
         $this->command->info('🏛️ Tạo đơn vị tổ chức...');
         $organizations = $this->createOrganizations();
 
-        // 7. Create electric meters
+        // 6. Create electric meters
         $this->command->info('⚡ Tạo công tơ điện...');
-        $meters = $this->createElectricMeters($organizations, $substations, $buildings);
+        $meters = $this->createElectricMeters($organizations, $substations);
 
         // 8. Create meter readings
         $this->command->info('📊 Tạo chỉ số công tơ...');
@@ -75,6 +70,38 @@ class DatabaseSeeder extends Seeder
         $this->command->info('   Password: password');
         $this->command->info('');
     }
+
+        /**
+         * Helper: Đọc file CSV và trả về array of records
+         */
+        private function readCSV(string $filename): array
+        {
+            $filePath = database_path("csv/{$filename}");
+        
+            if (!file_exists($filePath)) {
+                $this->command->warn("⚠️  File không tồn tại: {$filename}");
+                return [];
+            }
+
+            $records = [];
+            $handle = fopen($filePath, 'r');
+        
+            // Đọc header
+            $headers = fgetcsv($handle);
+        
+            // Đọc dữ liệu
+            while (($data = fgetcsv($handle)) !== false) {
+                $record = [];
+                foreach ($headers as $index => $header) {
+                    $record[$header] = $data[$index] ?? null;
+                }
+                $records[] = $record;
+            }
+        
+            fclose($handle);
+        
+            return $records;
+        }
 
     private function createAdminUser(): void
     {
@@ -138,21 +165,29 @@ class DatabaseSeeder extends Seeder
 
     private function createTariffs(): void
     {
+        // Get tariff type IDs for proper FK references
+        $residential = TariffType::where('code', 'RESIDENTIAL')->first();
+        $commercial = TariffType::where('code', 'COMMERCIAL')->first();
+        $industrial = TariffType::where('code', 'INDUSTRIAL')->first();
+
         $tariffs = [
             [
-                'tariff_type' => 'RESIDENTIAL',
+                'tariff_type_id' => $residential->id,
+                'tariff_type' => 'RESIDENTIAL', // Legacy
                 'price_per_kwh' => 2500,
                 'effective_from' => '2024-01-01',
                 'effective_to' => null,
             ],
             [
-                'tariff_type' => 'COMMERCIAL',
+                'tariff_type_id' => $commercial->id,
+                'tariff_type' => 'COMMERCIAL', // Legacy
                 'price_per_kwh' => 4169,
                 'effective_from' => '2024-01-01',
                 'effective_to' => null,
             ],
             [
-                'tariff_type' => 'INDUSTRIAL',
+                'tariff_type_id' => $industrial->id,
+                'tariff_type' => 'INDUSTRIAL', // Legacy
                 'price_per_kwh' => 3500,
                 'effective_from' => '2024-01-01',
                 'effective_to' => null,
@@ -160,7 +195,13 @@ class DatabaseSeeder extends Seeder
         ];
 
         foreach ($tariffs as $tariff) {
-            ElectricityTariff::create($tariff);
+            ElectricityTariff::firstOrCreate(
+                [
+                    'tariff_type_id' => $tariff['tariff_type_id'],
+                    'effective_from' => $tariff['effective_from']
+                ],
+                $tariff
+            );
         }
 
         $this->command->info('   ✓ Đã tạo ' . count($tariffs) . ' biểu giá điện');
@@ -192,43 +233,6 @@ class DatabaseSeeder extends Seeder
 
         $this->command->info('   ✓ Đã tạo ' . count($substations) . ' trạm biến áp');
         return $substations;
-    }
-
-    private function createBuildings(array $substations): array
-    {
-        $data = [
-            ['code' => 'D5', 'name' => 'Nhà D5', 'substation' => 'ĐLK', 'floors' => 5],
-            ['code' => 'A17', 'name' => 'Nhà A17', 'substation' => 'B1', 'floors' => 11],
-            ['code' => 'B1', 'name' => 'Tòa B1', 'substation' => 'B1', 'floors' => 11],
-            ['code' => 'D3', 'name' => 'Nhà D3', 'substation' => 'ĐLK', 'floors' => 5],
-            ['code' => 'D9', 'name' => 'Nhà D9', 'substation' => 'ĐLK', 'floors' => 4],
-            ['code' => 'C10', 'name' => 'Nhà C10', 'substation' => 'BK1', 'floors' => 4],
-            ['code' => 'C8', 'name' => 'Nhà C8', 'substation' => 'BK1', 'floors' => 3],
-            ['code' => 'SVĐ', 'name' => 'Sân vận động', 'substation' => 'SVĐ', 'floors' => 2],
-            ['code' => 'A15', 'name' => 'Nhà A15', 'substation' => 'B1', 'floors' => 5],
-            ['code' => 'B7', 'name' => 'Nhà B7 Bis', 'substation' => 'BK1', 'floors' => 4],
-            ['code' => 'D6', 'name' => 'Nhà D6', 'substation' => 'TVĐT', 'floors' => 4],
-            ['code' => 'D2A', 'name' => 'Nhà D2A', 'substation' => 'TVĐT', 'floors' => 3],
-            ['code' => 'B4', 'name' => 'Nhà B4', 'substation' => 'KTX', 'floors' => 4],
-            ['code' => 'TC', 'name' => 'Nhà TC', 'substation' => 'THCK', 'floors' => 4],
-            ['code' => '10TQB', 'name' => 'Số 10 TQB', 'substation' => 'B1', 'floors' => 4],
-        ];
-
-        $buildings = [];
-        foreach ($data as $item) {
-            $buildings[$item['code']] = Building::firstOrCreate(
-                ['code' => $item['code']],
-                [
-                    'name' => $item['name'],
-                    'substation_id' => $substations[$item['substation']]->id,
-                    'total_floors' => $item['floors'],
-                    'status' => 'ACTIVE',
-                ]
-            );
-        }
-
-        $this->command->info('   ✓ Đã tạo ' . count($buildings) . ' tòa nhà');
-        return $buildings;
     }
 
     private function createOrganizations(): array
@@ -328,18 +332,21 @@ class DatabaseSeeder extends Seeder
         return $result;
     }
 
-    private function createElectricMeters(array $organizations, array $substations, array $buildings): array
+    private function createElectricMeters(array $organizations, array $substations): array
     {
+        // Get tariff types for FK references
+        $commercial = TariffType::where('code', 'COMMERCIAL')->first();
+
         $metersData = [
-            ['number' => '3564', 'org' => 'CGCN_BK', 'building' => 'D5', 'sub' => 'ĐLK', 'type' => 'COMMERCIAL', 'loc' => 'Tầng 5 D5'],
-            ['number' => '8306', 'org' => 'CGCN_BK', 'building' => 'D5', 'sub' => 'ĐLK', 'type' => 'COMMERCIAL', 'loc' => 'Tầng 5 D5'],
-            ['number' => '9497', 'org' => 'BK_HOLDING', 'building' => 'A17', 'sub' => 'B1', 'type' => 'COMMERCIAL', 'loc' => 'Tủ ĐN 2'],
-            ['number' => '1478', 'org' => 'GENE_VN', 'building' => 'B1', 'sub' => 'B1', 'type' => 'COMMERCIAL', 'loc' => 'KTĐ T11'],
-            ['number' => '9278', 'org' => 'BIDV_HT', 'building' => 'A17', 'sub' => 'B1', 'type' => 'COMMERCIAL', 'loc' => 'Tủ ĐN1'],
-            ['number' => '3206', 'org' => 'KIOT_TRANG', 'building' => 'SVĐ', 'sub' => 'VVL', 'type' => 'COMMERCIAL', 'loc' => 'KĐ B- SVĐ'],
-            ['number' => '5089', 'org' => 'QUAN_LY', 'building' => '10TQB', 'sub' => 'B1', 'type' => 'COMMERCIAL', 'loc' => 'Tủ tổng T1'],
-            ['number' => '1738', 'org' => 'BIDA_PHU_KY', 'building' => '10TQB', 'sub' => 'B1', 'type' => 'COMMERCIAL', 'loc' => 'KTĐ T1'],
-            ['number' => '3448', 'org' => 'NAM_PHONG', 'building' => '10TQB', 'sub' => 'B1', 'type' => 'COMMERCIAL', 'loc' => 'Tầng 1 TTPV'],
+            ['number' => '3564', 'org' => 'CGCN_BK', 'sub' => 'ĐLK', 'tariff_type_id' => $commercial->id, 'loc' => 'Nhà D5 - Tầng 5'],
+            ['number' => '8306', 'org' => 'CGCN_BK', 'sub' => 'ĐLK', 'tariff_type_id' => $commercial->id, 'loc' => 'Nhà D5 - Tầng 5'],
+            ['number' => '9497', 'org' => 'BK_HOLDING', 'sub' => 'B1', 'tariff_type_id' => $commercial->id, 'loc' => 'Nhà A17 - Tủ ĐN 2'],
+            ['number' => '1478', 'org' => 'GENE_VN', 'sub' => 'B1', 'tariff_type_id' => $commercial->id, 'loc' => 'Tòa B1 - KTĐ T11'],
+            ['number' => '9278', 'org' => 'BIDV_HT', 'sub' => 'B1', 'tariff_type_id' => $commercial->id, 'loc' => 'Nhà A17 - Tủ ĐN1'],
+            ['number' => '3206', 'org' => 'KIOT_TRANG', 'sub' => 'SVĐ', 'tariff_type_id' => $commercial->id, 'loc' => 'Sân vận động - KĐ B'],
+            ['number' => '5089', 'org' => 'QUAN_LY', 'sub' => 'B1', 'tariff_type_id' => $commercial->id, 'loc' => 'Số 10 TQB - Tủ tổng T1'],
+            ['number' => '1738', 'org' => 'BIDA_PHU_KY', 'sub' => 'B1', 'tariff_type_id' => $commercial->id, 'loc' => 'Số 10 TQB - KTĐ T1'],
+            ['number' => '3448', 'org' => 'NAM_PHONG', 'sub' => 'B1', 'tariff_type_id' => $commercial->id, 'loc' => 'Số 10 TQB - Tầng 1 TTPV'],
         ];
 
         $meters = [];
@@ -348,11 +355,12 @@ class DatabaseSeeder extends Seeder
                 ['meter_number' => $data['number']],
                 [
                     'organization_unit_id' => $organizations[$data['org']]->id,
-                    'building_id' => $buildings[$data['building']]->id,
                     'substation_id' => $substations[$data['sub']]->id,
-                    'meter_type' => $data['type'],
+                    'tariff_type_id' => $data['tariff_type_id'],
+                    'meter_type' => 'COMMERCIAL', // Legacy
                     'installation_location' => $data['loc'],
                     'hsn' => 1,
+                    'subsidized_kwh' => 0, // No subsidy for commercial meters by default
                     'status' => 'ACTIVE',
                 ]
             );
@@ -403,7 +411,8 @@ class DatabaseSeeder extends Seeder
     private function createBills(array $organizations, array $meters): void
     {
         $count = 0;
-        $tariffs = ElectricityTariff::all()->keyBy('tariff_type');
+        // Use new tariff lookup by tariff_type_id
+        $tariffs = ElectricityTariff::with('tariffType')->get()->keyBy('tariff_type_id');
 
         foreach ($organizations as $org) {
             if ($org->electricMeters()->count() === 0) {
@@ -432,17 +441,23 @@ class DatabaseSeeder extends Seeder
 
                     $latest = $readings->first();
                     $prev = $readings->last();
-                    $consumption = max(0, $latest->reading_value - $prev->reading_value);
+                    $rawConsumption = max(0, ($latest->reading_value - $prev->reading_value) * $meter->hsn);
 
-                    $tariff = $tariffs->get($meter->meter_type);
+                    // Apply subsidized allowance
+                    $subsidizedApplied = min($rawConsumption, $meter->subsidized_kwh ?? 0);
+                    $chargeableKwh = max(0, $rawConsumption - $subsidizedApplied);
+
+                    $tariff = $tariffs->get($meter->tariff_type_id);
                     $price = $tariff ? $tariff->price_per_kwh : 2500;
 
-                    $amount = $consumption * $price * $meter->hsn;
+                    $amount = $chargeableKwh * $price;
 
                     BillDetail::create([
                         'bill_id' => $bill->id,
                         'electric_meter_id' => $meter->id,
-                        'consumption' => $consumption,
+                        'consumption' => $rawConsumption,
+                        'subsidized_applied' => $subsidizedApplied,
+                        'chargeable_kwh' => $chargeableKwh,
                         'price_per_kwh' => $price,
                         'hsn' => $meter->hsn,
                         'amount' => $amount,

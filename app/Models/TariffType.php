@@ -34,7 +34,8 @@ class TariffType extends Model
             'code' => ['required', 'string', 'max:50', 'unique:tariff_types,code,' . $id, 'regex:/^[A-Z_]+$/'],
             'name' => ['required', 'string', 'max:100'],
             'description' => ['nullable', 'string'],
-            'color' => ['required', 'string', 'max:20', 'in:primary,success,warning,danger,info'],
+            // Accept hex color code, e.g. #fff or #FFFFFF or #12ab34
+            'color' => ['required', 'string', 'max:20', 'regex:/^#(?:[0-9a-fA-F]{3}){1,2}$/'],
             'icon' => ['nullable', 'string', 'max:50'],
             'status' => ['required', 'in:ACTIVE,INACTIVE'],
             'sort_order' => ['required', 'integer', 'min:0'],

@@ -39,12 +39,12 @@ class OrganizationUnitResource extends Resource
 
     public static function form(Schema $schema): Schema
     {
-        return OrganizationUnitForm::configure($schema);
+        return $schema->schema(OrganizationUnitForm::schema());
     }
 
     public static function table(Table $table): Table
     {
-        return OrganizationUnitsTable::configure($table);
+        return OrganizationUnitsTable::table($table);
     }
 
     public static function infolist(Schema $schema): Schema

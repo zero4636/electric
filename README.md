@@ -1,258 +1,293 @@
-# 🔌 Hệ Thống Quản Lý Điện - Electricity Management System
+# 🔌 Hệ Thống Quản Lý Điện
 
-Một ứng dụng web quản lý điện năng toàn diện được xây dựng bằng **Laravel 11** và **Filament Admin Panel**. Hệ thống cung cấp giải pháp quản lý công tơ điện, đơn vị tổ chức, hóa đơn, biểu giá, và báo cáo tiêu thụ điện.
+Ứng dụng quản lý điện năng được xây dựng bằng **Laravel 11** và **Filament Admin Panel**.
 
-## 🎯 Tính Năng Chính
+## ️ Công Nghệ
 
-### 📊 Quản Lý Dữ Liệu Cơ Bản
-- **Danh mục**: Quản lý tòa nhà, đơn vị tổ chức, trạm biến áp, loại biểu giá
-- **Vận hành**: Quản lý công tơ điện, chỉ số công tơ
-- **Hóa đơn**: Tạo và quản lý hóa đơn, chi tiết hóa đơn
-- **Biểu giá**: Quản lý biểu giá điện, loại khách hàng
+- **Backend**: Laravel 11.46.1
+- **Admin Panel**: Filament PHP v4
+- **Database**: MariaDB 11.4.2
+- **Frontend**: Vite + Tailwind CSS 3.4
+- **Container**: Docker
 
-### 🏢 Quản Lý Tòa Nhà (Buildings)
-- Tạo, sửa, xóa thông tin tòa nhà
-- Liên kết với trạm biến áp
-- Quản lý số tầng, mã tòa nhà
-- Xem danh sách công tơ điện trong tòa nhà
+## 📋 Yêu Cầu
 
-### 🏛️ Quản Lý Đơn Vị Tổ Chức (Organization Units)
-- Hỗ trợ cấu trúc phân cấp (cha-con)
-- Quản lý loại đơn vị: ORGANIZATION, UNIT, CONSUMER
-- Liên kết công tơ điện và hóa đơn
-- Xem danh sách hóa đơn của mỗi đơn vị
-
-### ⚡ Quản Lý Công Tơ Điện (Electric Meters)
-- Tạo và quản lý công tơ
-- Liên kết với đơn vị tổ chức, tòa nhà, trạm biến áp
-- Phân loại: RESIDENTIAL, COMMERCIAL, INDUSTRIAL
-- Xem chi tiết và lịch sử chỉ số
-
-### 📈 Quản Lý Chỉ Số Công Tơ (Meter Readings)
-- Ghi chỉ số định kỳ (hàng tháng)
-- Tính toán tiêu thụ điện
-- Lịch sử đầy đủ của từng công tơ
-
-### 💰 Quản Lý Hóa Đơn (Bills)
-- Tạo hóa đơn tự động từ chỉ số công tơ
-- Quản lý chi tiết hóa đơn (consumption, price, amount)
-- Trạng thái: PENDING, PAID, CANCELLED
-- Xem chi tiết từng dòng hóa đơn
-
-### 📊 Quản Lý Biểu Giá (Electricity Tariffs)
-- Quản lý giá điện theo loại khách hàng
-- Ngày hiệu lực
-- Lịch sử thay đổi giá
-
-## 🛠️ Công Nghệ Sử Dụng
-
-| Thành Phần | Công Nghệ |
-|-----------|----------|
-| Backend | Laravel 11.46.1 |
-| Admin Panel | Filament PHP |
-| Database | MariaDB 11.4.2 |
-| Frontend Build | Vite |
-| CSS Framework | Tailwind CSS 3.4 |
-| Containerization | Docker |
-
-## 📋 Yêu Cầu Hệ Thống
-
-- PHP >= 8.2
+- PHP >= 8.4
 - Composer
 - Node.js >= 18
-- Docker & Docker Compose (optional)
-- MariaDB >= 10.6
+- Docker & Docker Compose
 
-## 🚀 Cài Đặt & Thiết Lập
+## 🚀 Hướng Dẫn Chạy Dự Án
 
-### 1. Clone Repository
-```bash
-git clone <repository-url>
-cd electric
-```
+### Sử Dụng Docker (Khuyến Nghị)
 
-### 2. Cài Đặt Dependencies
-```bash
-composer install
-npm install
-```
-
-### 3. Tạo File Environment
-```bash
-cp .env.example .env
-php artisan key:generate
-```
-
-### 4. Cấu Hình Database
-Chỉnh sửa file `.env`:
-```env
-DB_CONNECTION=mysql
-DB_HOST=127.0.0.1
-DB_PORT=3306
-DB_DATABASE=electric_db
-DB_USERNAME=root
-DB_PASSWORD=
-```
-
-### 5. Chạy Migrations
-```bash
-php artisan migrate
-```
-
-### 6. Seed Dữ Liệu Mẫu (Một Lệnh Duy Nhất)
-```bash
-php artisan db:seed
-```
-
-**Lệnh này sẽ tạo tất cả dữ liệu mẫu:**
-- ✅ 1 tài khoản Admin (admin@example.com / password)
-- ✅ 3 loại biểu giá (Dân cư, Thương mại, Công nghiệp)
-- ✅ 3 biểu giá điện
-- ✅ 11 trạm biến áp
-- ✅ 15 tòa nhà
-- ✅ 10 đơn vị tổ chức
-- ✅ 9 công tơ điện
-- ✅ 18 chỉ số công tơ
-- ✅ 12 hóa đơn với chi tiết
-
-### 7. Xây Dựng Assets
-```bash
-npm run build
-```
-
-### 8. Chạy Development Server
-```bash
-php artisan serve
-```
-
-Truy cập: http://localhost:8000
-
-## 🐳 Chạy Bằng Docker
-
-### Sử Dụng Docker Compose
+#### 1. Khởi động Docker containers
 ```bash
 cd docker/environment
-docker-compose up -d
+docker compose up -d
 ```
+
+#### 2. Cài đặt dependencies
+```bash
+docker compose exec cli composer install
+```
+
+#### 3. Tạo file environment
+```bash
+docker compose exec cli cp .env.example .env
+docker compose exec cli php artisan key:generate
+```
+
+#### 4. Chạy migrations
+```bash
+docker compose exec cli php artisan migrate
+```
+
+#### 5. Import dữ liệu demo
+```bash
+docker compose exec cli php artisan db:seed
+```
+
+**Dữ liệu được tạo:**
+- ✅ 1 tài khoản Admin (admin@example.com / password)
+- ✅ 3 loại biểu giá (Sinh hoạt, Thương mại, Sản xuất)
+- ✅ 3 biểu giá điện với giá hiện tại
+- ✅ 11 trạm biến áp
+- ✅ 15 tòa nhà
+- ✅ 10 đơn vị tổ chức (cấu trúc phân cấp)
+- ✅ 210 công tơ điện với loại biểu giá và số kWh bao cấp
+- ✅ 420 chỉ số công tơ (2 kỳ/công tơ)
+- ✅ 210 hóa đơn tự động với chi tiết
+
+#### 6. Truy cập ứng dụng
+- **URL**: http://electric.test (hoặc http://localhost:port theo cấu hình)
+- **Admin Panel**: http://electric.test/admin
+- **Email**: admin@example.com
+- **Password**: password
 
 ### Chạy Lệnh Artisan
+
+Mọi lệnh artisan chạy qua Docker:
 ```bash
-docker-compose exec cli php artisan migrate
-docker-compose exec cli php artisan db:seed
+docker compose exec cli php artisan [command]
 ```
 
-## 📂 Cấu Trúc Dự Án
+Ví dụ:
+```bash
+# Tạo migration
+docker compose exec cli php artisan make:migration create_example_table
 
-```
-electric/
-├── app/
-│   ├── Filament/         # Admin Panel Resources (9 resources)
-│   │   └── Resources/
-│   │       ├── Buildings/
-│   │       ├── Bills/
-│   │       ├── OrganizationUnits/
-│   │       ├── ElectricMeters/
-│   │       ├── MeterReadings/
-│   │       ├── ElectricityTariffs/
-│   │       ├── TariffTypes/
-│   │       ├── Substations/
-│   │       └── Users/
-│   ├── Models/          # Eloquent Models (9 models)
-│   ├── Services/        # Business Logic
-│   ├── Helpers/         # Helper Functions
-│   └── Providers/       # Service Providers
-├── database/
-│   ├── migrations/      # Database Migrations (35+ indexes)
-│   ├── seeders/         # DatabaseSeeder (tất cả trong 1 file)
-│   └── factories/       # Model Factories
-├── resources/
-│   ├── css/            # Tailwind CSS (Professional design)
-│   └── js/             # Frontend JS
-├── docker/             # Docker Configuration
-├── config/             # Configuration Files
-└── routes/             # Route Definitions
+# Clear cache
+docker compose exec cli php artisan cache:clear
+
+# Tinker
+docker compose exec cli php artisan tinker
 ```
 
-## 🗄️ Cấu Trúc Database
+## � Import Dữ Liệu CSV
 
-### Bảng Chính
+### Cách 1: Import từ file CSV thô (Dữ liệu thực tế)
 
-| Bảng | Mô Tả | Relationships |
-|------|-------|---------------|
-| `users` | Tài khoản người dùng | - |
-| `tariff_types` | Loại biểu giá | Has many ElectricityTariffs |
-| `electricity_tariffs` | Biểu giá điện | Belongs to TariffType |
-| `substations` | Trạm biến áp | Has many Buildings, ElectricMeters |
-| `buildings` | Tòa nhà | Belongs to Substation, Has many ElectricMeters |
-| `organization_units` | Đơn vị tổ chức | Hierarchical, Has many ElectricMeters, Bills |
-| `electric_meters` | Công tơ điện | Belongs to OrganizationUnit/Building/Substation, Has many Readings/BillDetails |
-| `meter_readings` | Chỉ số công tơ | Belongs to ElectricMeter |
-| `bills` | Hóa đơn | Belongs to OrganizationUnit, Has many BillDetails |
-| `bill_details` | Chi tiết hóa đơn | Belongs to Bill, ElectricMeter |
+Nếu bạn có file CSV thô từ hệ thống cũ (như file `storage/app/data.csv`), sử dụng script để làm sạch và tách dữ liệu:
 
-### Indexes (35+)
-- Primary keys trên tất cả bảng
-- Foreign keys tối ưu hóa
-- Indexes trên các trường tìm kiếm thường xuyên
-- Composite indexes cho queries phức tạp
+```bash
+# Đặt file CSV gốc vào storage/app/data.csv
+# Sau đó chạy script parse
+docker compose exec cli php scripts/parse-csv-data.php
+```
 
-Chi tiết đầy đủ xem trong `DATABASE_DESIGN.md`
+Script sẽ tự động:
+- ✅ Loại bỏ header/footer thừa
+- ✅ Lọc dữ liệu không hợp lệ
+- ✅ Tách thành 5 file CSV chuẩn trong `database/csv/`
+- ✅ Mapping quan hệ giữa các bảng (codes, foreign keys)
+- ✅ Xử lý nhiều công tơ trong 1 dòng
+- ✅ Tính toán consumption tự động
 
-## 👤 Đăng Nhập Admin Panel
+Sau khi parse xong, chạy seeder:
+```bash
+docker compose exec cli php artisan db:seed
+```
 
-**URL**: http://localhost:8000/admin
+### Cách 2: Sử dụng file CSV chuẩn có sẵn
 
-**Tài khoản mặc định**:
-- Email: `admin@example.com`
-- Password: `password`
+Hệ thống đã có sẵn file CSV mẫu trong thư mục `database/csv/`:
 
-## 🎨 Thiết Kế UI/UX
+### Cấu trúc file CSV:
 
-- **Color Scheme**: Blue primary, Slate background (light & dark mode)
-- **Border Radius**: rounded-lg (8px) - Professional yet modern
-- **Components**: Border-based styling, minimal shadows
-- **Responsiveness**: Fully responsive, mobile-friendly
-- **Typography**: Inter font family
-- **Max Width**: 8xl (90rem)
+#### `tariff_types.csv`
+```csv
+name,description,color,icon,status,sort_order
+Sinh hoạt,Biểu giá cho hộ gia đình,#3b82f6,heroicon-o-home,ACTIVE,1
+Thương mại,Biểu giá cho cơ sở kinh doanh,#22c55e,heroicon-o-building-office,ACTIVE,2
+Sản xuất,Biểu giá cho nhà máy sản xuất,#f59e0b,heroicon-o-wrench-screwdriver,ACTIVE,3
+```
 
-## 📝 Navigation Groups
+#### `electricity_tariffs.csv`
+```csv
+tariff_type_id,price_per_kwh,effective_from,effective_to,tier_level,tier_min_kwh,tier_max_kwh
+1,2500,2025-01-01,,1,0,100
+2,4169,2025-01-01,,1,,,
+3,3500,2025-01-01,,1,,,
+```
 
-| Nhóm | Mục | Tổng |
-|-----|------|------|
-| **Danh mục** | Đơn vị tổ chức, Tòa nhà, Trạm điện, Loại biểu giá | 4 items |
-| **Vận hành** | Công tơ điện, Chỉ số công tơ | 2 items |
-| **Hóa đơn** | Hóa đơn, Chi tiết hóa đơn | 2 items |
-| **Biểu giá** | Biểu giá điện, Loại biểu giá | 2 items |
+#### `substations.csv`
+```csv
+name,code,location,capacity_kva,voltage_level,status
+Trạm BA số 1,TBA-001,"Khu A, Tòa nhà chính",1000,22,ACTIVE
+```
 
-## 🔒 Bảo Mật
+#### `organization_units.csv`
+```csv
+name,code,type,parent_code,contact_person,contact_phone,email,address
+Công ty TNHH ABC,ORG-001,ORGANIZATION,,,info@abc.com,"123 Đường ABC"
+Phòng Kỹ thuật,UNIT-001,UNIT,ORG-001,Nguyễn Văn A,0901234567,kythuat@abc.com,
+Anh Nguyễn Văn B,CONSUMER-001,CONSUMER,UNIT-001,Nguyễn Văn B,0912345678,nvb@abc.com,"Phòng 101, Tầng 1"
+```
 
-- CSRF protection
-- SQL Injection prevention (Eloquent ORM)
-- XSS protection (Blade template escaping)
-- Password hashing (Bcrypt)
-- Input validation & sanitization
-- Authorization checks
+#### `electric_meters.csv`
+```csv
+meter_number,organization_unit_code,building_code,substation_code,tariff_type_id,subsidized_kwh,location,installation_date,status
+EM-2025-001,CONSUMER-001,BLD-001,TBA-001,1,50,"Phòng 101",2025-01-15,ACTIVE
+EM-2025-002,CONSUMER-002,BLD-001,TBA-001,2,0,"Văn phòng tầng 2",2025-01-15,ACTIVE
+```
 
-## 📚 Tài Liệu
+### Chạy import:
 
-- **DATABASE_DESIGN.md** - Schema, relationships, migrations chi tiết
-- **README.md** - Tài liệu này
-- Inline code documentation & comments
+Seeder tự động đọc và import tất cả file CSV:
+```bash
+docker compose exec cli php artisan db:seed
+```
 
-## 🤝 Contributing
+Hoặc chạy từng seeder cụ thể:
+```bash
+docker compose exec cli php artisan db:seed --class=TariffTypeSeeder
+docker compose exec cli php artisan db:seed --class=ElectricityTariffSeeder
+docker compose exec cli php artisan db:seed --class=SubstationSeeder
+docker compose exec cli php artisan db:seed --class=OrganizationUnitSeeder
+docker compose exec cli php artisan db:seed --class=ElectricMeterSeeder
+```
 
-Contributions welcome! Vui lòng:
-1. Fork repository
-2. Tạo feature branch
-3. Commit changes
-4. Push to branch
-5. Mở Pull Request
+### Lưu ý khi import CSV:
 
-## 📄 License
+1. **Thứ tự import**: Phải tuân thủ thứ tự dependencies
+   - TariffTypes → ElectricityTariffs
+   - Substations → Buildings
+   - OrganizationUnits (parent trước, child sau)
+   - ElectricMeters (sau khi có OrganizationUnits, Buildings, Substations, TariffTypes)
 
-MIT License - xem file LICENSE
+2. **Encoding**: File CSV phải UTF-8 (có BOM) để hỗ trợ tiếng Việt
+
+3. **Foreign Keys**: 
+   - `tariff_type_id` phải tồn tại trong bảng `tariff_types`
+   - Codes (`parent_code`, `organization_unit_code`, etc.) phải khớp chính xác
+
+4. **Định dạng ngày**: `YYYY-MM-DD` (vd: 2025-01-15)
+
+5. **Enum values**: Phải đúng giá trị định nghĩa trong model
+   - `type`: ORGANIZATION, UNIT, CONSUMER
+   - `status`: ACTIVE, INACTIVE, MAINTENANCE
+
+### File CSV thô (data.csv):
+
+File `storage/app/data.csv` là bảng tổng hợp thực tế từ hệ thống cũ với cấu trúc:
+
+| Cột | Nội dung | Mapping vào bảng |
+|-----|----------|------------------|
+| 1 | STT | - |
+| 2 | Hộ tiêu thụ điện | organization_units.name |
+| 3 | Đơn vị chủ quản | organization_units.parent |
+| 4 | Địa chỉ | organization_units.address |
+| 5-6 | Điện thoại | organization_units.contact_phone |
+| 7 | Đại diện | organization_units.contact_person |
+| 8 | Nhà/Tòa nhà | buildings.name |
+| 9 | Tầng | - |
+| 10 | Số công tơ | electric_meters.meter_number |
+| 11 | Loại công tơ | Xác định tariff_type_id |
+| 12 | Vị trí đặt công tơ | electric_meters.location |
+| 13 | Trạm biến áp | substations.code |
+| 14 | Trang | - |
+| 15 | Chỉ số mới | meter_readings.current_reading |
+| 16 | Chỉ số cũ | meter_readings.previous_reading |
+| 17 | Hệ số nhân | meter_readings.multiplier |
+| 18 | Tổng tiêu thụ | Tính toán từ (15-16)*17 |
+| 19 | Bao cấp | electric_meters.subsidized_kwh |
+| 20 | Điện năng phải trả | bill_details.chargeable_kwh |
+| 21 | Đơn giá | electricity_tariffs.price_per_kwh |
+| 22 | Thành tiền | bill_details.amount |
+| 23 | Người thực hiện | - |
+
+**Script tự động xử lý:**
+- Loại bỏ 3 dòng header thừa
+- Loại bỏ dòng tổng cộng cuối file
+- Tách nhiều công tơ trong 1 ô (vd: "9094, 4383" → 2 records)
+- Tự động mapping codes giữa các bảng
+- Tạo 2 kỳ chỉ số (tháng 5 và tháng 6/2025)
+
+## 🗄️ Database Schema
+
+### Các bảng chính:
+
+| Bảng | Mô tả |
+|------|-------|
+| `users` | Tài khoản người dùng |
+| `tariff_types` | Loại biểu giá (Sinh hoạt, Thương mại, Sản xuất) |
+| `electricity_tariffs` | Biểu giá điện theo loại và thời gian |
+| `substations` | Trạm biến áp |
+| `buildings` | Tòa nhà |
+| `organization_units` | Đơn vị tổ chức (phân cấp) |
+| `electric_meters` | Công tơ điện |
+| `meter_readings` | Chỉ số công tơ |
+| `bills` | Hóa đơn |
+| `bill_details` | Chi tiết hóa đơn (có subsidized_applied, chargeable_kwh) |
+
+### Tính năng đặc biệt:
+
+#### Subsidized kWh (Điện bao cấp)
+- Mỗi công tơ có trường `subsidized_kwh` (số kWh được bao cấp/tháng)
+- Khi tính hóa đơn, hệ thống tự động trừ số kWh bao cấp trước khi tính giá
+- `bill_details` lưu:
+  - `subsidized_applied`: Số kWh bao cấp đã áp dụng
+  - `chargeable_kwh`: Số kWh phải tính tiền (sau khi trừ bao cấp)
+
+#### Tariff Type FK-based
+- Thay vì dùng enum cố định, hệ thống dùng foreign key đến bảng `tariff_types`
+- Linh hoạt thêm/sửa loại biểu giá không cần migration
+- Mỗi loại biểu giá có màu sắc (hex) và icon (heroicons) tùy chỉnh
+
+## 🎯 Tính Năng
+
+- **Quản lý công tơ**: Tạo, sửa, xem chi tiết với thông tin loại biểu giá và giá hiện tại
+- **Chỉ số công tơ**: Ghi nhận định kỳ, tự động tính tiêu thụ
+- **Hóa đơn**: Tạo tự động từ chỉ số, tính toán với bao cấp điện
+- **Biểu giá linh hoạt**: Quản lý giá theo loại, thời gian hiệu lực
+- **Loại biểu giá**: Tùy chỉnh màu sắc, icon cho từng loại
+- **Cấu trúc tổ chức**: Phân cấp đơn vị (Organization → Unit → Consumer)
+- **Redirect thông minh**: Sau khi save tự động chuyển về trang detail hoặc list
+
+## � Lệnh Hữu Ích
+
+```bash
+# Parse file CSV thô thành các file chuẩn
+docker compose exec cli php scripts/parse-csv-data.php
+
+# Reset database và import lại
+docker compose exec cli php artisan migrate:fresh --seed
+
+# Chỉ import data, không xóa
+docker compose exec cli php artisan db:seed
+
+# Xem logs
+docker compose logs -f cli
+
+# Clear cache
+docker compose exec cli php artisan optimize:clear
+
+# Tạo user mới
+docker compose exec cli php artisan make:filament-user
+```
 
 ---
 
-**Phiên bản**: 1.0.0 | **Cập nhật**: October 2025
+**Phiên bản**: 2.0.0 | **Cập nhật**: November 2025
 

@@ -28,7 +28,7 @@ class BillDetailInfolist
                     ->columns(3)
                     ->schema([
                         TextEntry::make('electricMeter.meter_number')
-                            ->label('Số công tơ'),
+                            ->label('Mã công tơ'),
                         TextEntry::make('hsn')
                             ->label('HSN')
                             ->numeric(2),

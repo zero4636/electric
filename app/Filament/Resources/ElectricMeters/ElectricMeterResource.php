@@ -37,12 +37,12 @@ class ElectricMeterResource extends Resource
 
     public static function form(Schema $schema): Schema
     {
-        return ElectricMeterForm::configure($schema);
+        return $schema->schema(ElectricMeterForm::schema());
     }
 
     public static function table(Table $table): Table
     {
-        return ElectricMetersTable::configure($table);
+        return ElectricMetersTable::table($table);
     }
 
     public static function infolist(Schema $schema): Schema
@@ -53,7 +53,7 @@ class ElectricMeterResource extends Resource
     public static function getRelations(): array
     {
         return [
-            //
+            \App\Filament\Resources\ElectricMeters\RelationManagers\MeterReadingsRelationManager::class,
         ];
     }
 

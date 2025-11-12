@@ -15,35 +15,73 @@ class BillDetailInfolist
                 Section::make('Thông tin hóa đơn')
                     ->columns(3)
                     ->components([
-                        TextEntry::make('bill.id')->label('Mã hóa đơn'),
-                        TextEntry::make('bill.billing_date')->label('Ngày lập')->dateTime('d/m/Y'),
-                        TextEntry::make('bill.organizationUnit.name')->label('Đơn vị'),
+                        TextEntry::make('bill.bill_number')
+                            ->label('Số hóa đơn')
+                            ->weight('bold')
+                            ->copyable(),
+                        TextEntry::make('bill.billing_month')
+                            ->label('Tháng thanh toán')
+                            ->date('m/Y'),
+                        TextEntry::make('bill.organizationUnit.name')
+                            ->label('Đơn vị')
+                            ->limit(50),
                     ]),
 
-                Section::make('Công tơ')
+                Section::make('Công tơ điện')
                     ->columns(3)
                     ->components([
-                        TextEntry::make('electricMeter.meter_number')->label('Số công tơ'),
-                        TextEntry::make('hsn')->label('HSN')->numeric(2),
-                        TextEntry::make('electricMeter.organizationUnit.name')->label('Đơn vị quản lý'),
+                        TextEntry::make('electricMeter.meter_number')
+                            ->label('Mã công tơ')
+                            ->copyable()
+                            ->weight('bold'),
+                        TextEntry::make('electricMeter.organizationUnit.name')
+                            ->label('Hộ tiêu thụ')
+                            ->limit(40),
+                        TextEntry::make('hsn')
+                            ->label('HSN (Hệ số nhân)')
+                            ->numeric(2)
+                            ->badge()
+                            ->color('info'),
                     ]),
 
-                Section::make('Chỉ số')
+                Section::make('Chỉ số ghi nhận')
                     ->columns(4)
                     ->components([
-                        TextEntry::make('startReading.reading_date')->label('Ngày đầu')->date('d/m/Y')->placeholder('—'),
-                        TextEntry::make('startReading.reading_value')->label('Chỉ số đầu')->numeric(2)->placeholder('—'),
-                        TextEntry::make('endReading.reading_date')->label('Ngày cuối')->date('d/m/Y')->placeholder('—'),
-                        TextEntry::make('endReading.reading_value')->label('Chỉ số cuối')->numeric(2)->placeholder('—'),
+                        TextEntry::make('old_reading')
+                            ->label('Chỉ số cũ')
+                            ->numeric(2)
+                            ->suffix(' kWh'),
+                        TextEntry::make('new_reading')
+                            ->label('Chỉ số mới')
+                            ->numeric(2)
+                            ->suffix(' kWh'),
+                        TextEntry::make('consumption')
+                            ->label('Tiêu thụ')
+                            ->numeric(2)
+                            ->suffix(' kWh')
+                            ->badge()
+                            ->color('warning')
+                            ->weight('bold')
+                            ->getStateUsing(fn ($record) => $record->new_reading - $record->old_reading),
+                        TextEntry::make('reading_date')
+                            ->label('Ngày ghi')
+                            ->date('d/m/Y')
+                            ->icon('heroicon-o-calendar'),
                     ]),
 
                 Section::make('Tính tiền')
-                    ->columns(3)
+                    ->columns(2)
                     ->components([
-                        TextEntry::make('consumption')->label('Tiêu thụ (kWh)')->numeric(2),
-                        TextEntry::make('price_per_kwh')->label('Đơn giá (đ/kWh)')->money('VND', true),
-                        TextEntry::make('amount')->label('Thành tiền')->money('VND', true),
-                        TextEntry::make('subsidized_amount')->label('Hỗ trợ')->money('VND', true)->placeholder('—')->columnSpanFull(),
+                        TextEntry::make('price_per_kwh')
+                            ->label('Đơn giá')
+                            ->money('VND')
+                            ->suffix(' đ/kWh'),
+                        TextEntry::make('amount')
+                            ->label('Thành tiền')
+                            ->money('VND')
+                            ->weight('bold')
+                            ->size('lg')
+                            ->color('success'),
                     ]),
             ]);
     }

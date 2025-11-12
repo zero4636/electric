@@ -9,4 +9,9 @@ class CreateTariffType extends CreateRecord
 {
     protected static string $resource = TariffTypeResource::class;
     protected static ?string $title = 'Tạo loại biểu giá mới';
+
+    protected function getRedirectUrl(): string
+    {
+        return $this->getResource()::getUrl('index');
+    }
 }

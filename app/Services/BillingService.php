@@ -82,28 +82,37 @@ class BillingService
             return null;
         }
 
-        // Calculate consumption
-        $consumption = ($endReading->reading_value - $startReading->reading_value) * $meter->hsn;
+        // Calculate raw consumption (before subsidized deduction)
+        $rawConsumption = ($endReading->reading_value - $startReading->reading_value) * $meter->hsn;
 
-        if ($consumption <= 0) {
+        if ($rawConsumption <= 0) {
             return null;
         }
 
-        // Get appropriate tariff
-        $tariff = ElectricityTariff::getActiveTariff($meter->meter_type, $toDate);
+        // Apply subsidized kWh allowance
+        $subsidizedApplied = min($rawConsumption, $meter->subsidized_kwh ?? 0);
+        $chargeableKwh = max(0, $rawConsumption - $subsidizedApplied);
+
+        // Get appropriate tariff using tariff_type_id
+        $tariff = ElectricityTariff::getActiveTariff($meter->tariff_type_id, $toDate);
 
         if (!$tariff) {
-            throw new \Exception("No active tariff found for meter type: {$meter->meter_type}");
+            throw new \Exception("No active tariff found for tariff type ID: {$meter->tariff_type_id}");
         }
+
+        // Calculate amount based on chargeable consumption only
+        $amount = $chargeableKwh * $tariff->price_per_kwh;
 
         // Create bill detail
         return BillDetail::create([
             'bill_id' => $bill->id,
             'electric_meter_id' => $meter->id,
-            'consumption' => $consumption,
+            'consumption' => $rawConsumption,
+            'subsidized_applied' => $subsidizedApplied,
+            'chargeable_kwh' => $chargeableKwh,
             'price_per_kwh' => $tariff->price_per_kwh,
             'hsn' => $meter->hsn,
-            'amount' => $consumption * $tariff->price_per_kwh,
+            'amount' => $amount,
         ]);
     }
 

@@ -75,27 +75,51 @@ class ValidationHelper
     public static function attributes(): array
     {
         return [
-            'meter_number' => 'Số công tơ',
-            'organization_unit_id' => 'Đơn vị tổ chức',
+            // Electric Meter
+            'meter_number' => 'Mã công tơ',
+            'organization_unit_id' => 'Hộ tiêu thụ điện',
             'substation_id' => 'Trạm biến áp',
-            'meter_type' => 'Loại công tơ',
+            'building' => 'Nhà/Tòa nhà',
+            'floor' => 'Tầng',
+            'installation_location' => 'Vị trí đặt công tơ',
+            'meter_type' => 'Loại hình tiêu thụ',
+            'phase_type' => 'Loại công tơ (pha)',
             'hsn' => 'Hệ số nhân',
+            'subsidized_kwh' => 'Điện bao cấp (kWh)',
             'status' => 'Trạng thái',
-            'name' => 'Tên',
-            'code' => 'Mã',
+            
+            // Organization Unit
+            'name' => 'Tên đơn vị/Hộ tiêu thụ',
+            'code' => 'Mã đơn vị',
+            'type' => 'Loại đơn vị',
+            'parent_id' => 'Đơn vị cấp trên',
+            'contact_name' => 'Người đại diện',
+            'contact_phone' => 'Số điện thoại',
+            'email' => 'Email',
+            'tax_code' => 'Mã số thuế',
+            'address' => 'Địa chỉ',
+            'notes' => 'Ghi chú',
+            
+            // Substation
             'location' => 'Vị trí',
+            
+            // Tariff
             'tariff_type' => 'Loại biểu giá',
             'price_per_kwh' => 'Giá điện',
             'effective_from' => 'Hiệu lực từ',
             'effective_to' => 'Hiệu lực đến',
+            
+            // Meter Reading
             'reading_date' => 'Ngày ghi',
             'reading_value' => 'Chỉ số',
+            'electric_meter_id' => 'Công tơ điện',
+            
+            // Bill
             'billing_date' => 'Ngày lập hóa đơn',
             'total_amount' => 'Tổng tiền',
             'consumption' => 'Sản lượng',
             'amount' => 'Thành tiền',
             'bill_id' => 'Hóa đơn',
-            'electric_meter_id' => 'Công tơ điện',
         ];
     }
 }

@@ -19,7 +19,7 @@ class ElectricMetersRelationManager extends RelationManager
     {
         return $table
             ->columns([
-                TextColumn::make('meter_number')->label('Số công tơ')->sortable()->searchable(),
+                TextColumn::make('meter_number')->label('Mã công tơ')->sortable()->searchable(),
                 TextColumn::make('substation.name')->label('Trạm điện')->sortable(),
                 TextColumn::make('meter_type')
                     ->label('Loại')

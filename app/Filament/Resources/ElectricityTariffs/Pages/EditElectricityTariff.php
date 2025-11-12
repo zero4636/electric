@@ -17,4 +17,14 @@ class EditElectricityTariff extends EditRecord
             DeleteAction::make()->label('Xóa'),
         ];
     }
+
+    protected function getRedirectUrl(): string
+    {
+        // Check if view route exists, otherwise redirect to index
+        $pages = $this->getResource()::getPages();
+        if (isset($pages['view'])) {
+            return $this->getResource()::getUrl('view', ['record' => $this->getRecord()]);
+        }
+        return $this->getResource()::getUrl('index');
+    }
 }

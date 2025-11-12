@@ -14,7 +14,7 @@ class ElectricityTariff extends Model
 
     protected $fillable = [
         'tariff_type_id',
-        'tariff_type',
+        'tariff_type', // Legacy - will be removed
         'price_per_kwh',
         'effective_from',
         'effective_to',
@@ -32,8 +32,8 @@ class ElectricityTariff extends Model
     public static function rules($id = null): array
     {
         return [
-            'tariff_type_id' => ['nullable', 'exists:tariff_types,id'],
-            'tariff_type' => ['nullable', 'in:RESIDENTIAL,COMMERCIAL,INDUSTRIAL'],
+            'tariff_type_id' => ['required', 'exists:tariff_types,id'],
+            'tariff_type' => ['nullable', 'in:RESIDENTIAL,COMMERCIAL,INDUSTRIAL'], // Legacy - optional
             'price_per_kwh' => ['required', 'numeric', 'min:0', 'max:999999.99'],
             'effective_from' => ['required', 'date'],
             'effective_to' => ['nullable', 'date', 'after:effective_from'],
@@ -49,9 +49,31 @@ class ElectricityTariff extends Model
     }
 
     /**
-     * Get active tariff for a specific type
+     * Get active tariff for a specific tariff type ID
      */
-    public static function getActiveTariff(string $type, $date = null)
+    public static function getActiveTariff(?int $tariffTypeId, $date = null)
+    {
+        if (!$tariffTypeId) {
+            return null;
+        }
+        
+        $date = $date ?? now();
+        
+        return static::where('tariff_type_id', $tariffTypeId)
+            ->where('effective_from', '<=', $date)
+            ->where(function ($query) use ($date) {
+                $query->whereNull('effective_to')
+                    ->orWhere('effective_to', '>=', $date);
+            })
+            ->orderBy('effective_from', 'desc')
+            ->first();
+    }
+    
+    /**
+     * Legacy method - Get active tariff by enum type
+     * @deprecated Use getActiveTariff($tariffTypeId) instead
+     */
+    public static function getActiveTariffByType(string $type, $date = null)
     {
         $date = $date ?? now();
         

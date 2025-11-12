@@ -18,6 +18,8 @@ class BillDetail extends Model
         'start_reading_id',
         'end_reading_id',
         'consumption',
+        'subsidized_applied',
+        'chargeable_kwh',
         'price_per_kwh',
         'hsn',
         'subsidized_amount',
@@ -26,6 +28,8 @@ class BillDetail extends Model
 
     protected $casts = [
         'consumption' => 'decimal:2',
+        'subsidized_applied' => 'decimal:2',
+        'chargeable_kwh' => 'decimal:2',
         'price_per_kwh' => 'decimal:2',
         'hsn' => 'decimal:2',
         'subsidized_amount' => 'decimal:2',

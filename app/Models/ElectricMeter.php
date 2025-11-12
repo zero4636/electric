@@ -14,20 +14,22 @@ class ElectricMeter extends Model
      */
     protected $fillable = [
         'meter_number',
-        'meter_book_code',
-        'meter_book_page',
         'organization_unit_id',
         'substation_id',
-        'building_id',
-        'floor_number',
+        'tariff_type_id',
+        'building',
+        'floor',
         'installation_location',
-        'meter_type',
+        'meter_type', // Legacy - will be removed
+        'phase_type',
         'hsn',
+        'subsidized_kwh',
         'status',
     ];
 
     protected $casts = [
         'hsn' => 'decimal:2',
+        'subsidized_kwh' => 'decimal:2',
     ];
 
     /**
@@ -38,9 +40,11 @@ class ElectricMeter extends Model
         return [
             'meter_number' => ['required', 'string', 'max:255', 'unique:electric_meters,meter_number,' . $id],
             'organization_unit_id' => ['required', 'exists:organization_units,id'],
-            'substation_id' => ['nullable', 'exists:substations,id'],
-            'meter_type' => ['required', 'in:RESIDENTIAL,COMMERCIAL,INDUSTRIAL'],
+            'substation_id' => ['required', 'exists:substations,id'],
+            'tariff_type_id' => ['required', 'exists:tariff_types,id'],
+            'meter_type' => ['nullable', 'in:RESIDENTIAL,COMMERCIAL,INDUSTRIAL'], // Legacy - optional
             'hsn' => ['required', 'numeric', 'min:0.01', 'max:9999.99'],
+            'subsidized_kwh' => ['nullable', 'numeric', 'min:0', 'max:999999.99'],
             'status' => ['required', 'in:ACTIVE,INACTIVE'],
         ];
     }
@@ -55,9 +59,9 @@ class ElectricMeter extends Model
         return $this->belongsTo(Substation::class);
     }
 
-    public function building()
+    public function tariffType()
     {
-        return $this->belongsTo(Building::class);
+        return $this->belongsTo(TariffType::class);
     }
 
     public function meterReadings()

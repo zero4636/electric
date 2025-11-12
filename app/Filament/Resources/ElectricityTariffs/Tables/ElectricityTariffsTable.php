@@ -5,10 +5,10 @@ namespace App\Filament\Resources\ElectricityTariffs\Tables;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\CreateAction;
 use Filament\Actions\DeleteBulkAction;
-use Filament\Actions\EditAction;
 use Filament\Tables\Table;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Columns\BadgeColumn;
+use Filament\Tables\Columns\ColorColumn;
 
 class ElectricityTariffsTable
 {
@@ -16,18 +16,26 @@ class ElectricityTariffsTable
     {
         return $table
             ->columns([
-                BadgeColumn::make('tariffType.name')
+                TextColumn::make('tariffType.name')
                     ->label('Loại')
                     ->searchable()
                     ->sortable()
-                    ->colors([
-                        'primary' => fn($record) => $record->tariffType?->color === 'primary',
-                        'success' => fn($record) => $record->tariffType?->color === 'success',
-                        'warning' => fn($record) => $record->tariffType?->color === 'warning',
-                        'danger' => fn($record) => $record->tariffType?->color === 'danger',
-                        'info' => fn($record) => $record->tariffType?->color === 'info',
-                    ])
-                    ->placeholder('—'),
+                    ->placeholder('—')
+                    ->formatStateUsing(function ($state, $record) {
+                        $label = e($state ?? '—');
+                        $color = $record->tariffType?->color ?? '#9CA3AF';
+                        $hex = ltrim($color, '#');
+                        if (strlen($hex) === 3) {
+                            $hex = $hex[0].$hex[0].$hex[1].$hex[1].$hex[2].$hex[2];
+                        }
+                        $r = hexdec(substr($hex, 0, 2));
+                        $g = hexdec(substr($hex, 2, 2));
+                        $b = hexdec(substr($hex, 4, 2));
+                        $yiq = (($r * 299) + ($g * 587) + ($b * 114)) / 1000;
+                        $text = $yiq >= 128 ? '#111827' : '#ffffff';
+                        return "<span class=\"fi-badge fi-size-sm\" style=\"background-color:#{$hex}; color: {$text};\" title=\"#{$hex}\">{$label}</span>";
+                    })
+                    ->html(),
                 TextColumn::make('price_per_kwh')
                     ->label('Giá (VNĐ/kWh)')
                     ->money('VND')
@@ -72,9 +80,6 @@ class ElectricityTariffsTable
             ])
             ->filters([
                 //
-            ])
-            ->recordActions([
-                EditAction::make(),
             ])
             ->toolbarActions([
                 CreateAction::make()

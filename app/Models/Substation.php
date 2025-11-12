@@ -13,6 +13,7 @@ class Substation extends Model
         'name',
         'code',
         'location',
+        'address',
         'status',
     ];
 
@@ -30,13 +31,9 @@ class Substation extends Model
             'name' => ['required', 'string', 'max:255'],
             'code' => ['required', 'string', 'max:255', 'unique:substations,code,' . $id],
             'location' => ['nullable', 'string', 'max:500'],
+            'address' => ['nullable', 'string', 'max:500'],
             'status' => ['required', 'in:ACTIVE,INACTIVE'],
         ];
-    }
-
-    public function buildings()
-    {
-        return $this->hasMany(Building::class);
     }
 
     public function electricMeters()

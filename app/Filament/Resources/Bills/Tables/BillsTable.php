@@ -5,7 +5,6 @@ namespace App\Filament\Resources\Bills\Tables;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\CreateAction;
 use Filament\Actions\DeleteBulkAction;
-use Filament\Actions\EditAction;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Columns\BadgeColumn;
 use Filament\Tables\Filters\Filter;
@@ -38,7 +37,7 @@ class BillsTable
                     ->limit(30)
                     ->wrap(),
                 TextColumn::make('details_count')
-                    ->label('Số công tơ')
+                    ->label('Mã công tơ')
                     ->getStateUsing(fn($record) => $record->billDetails()->count())
                     ->badge()
                     ->color('success')
@@ -88,9 +87,6 @@ class BillsTable
                         return $query->when(isset($data['from']), fn($q) => $q->where('billing_date', '>=', $data['from']))
                                      ->when(isset($data['until']), fn($q) => $q->where('billing_date', '<=', $data['until']));
                     }),
-            ])
-            ->recordActions([
-                EditAction::make(),
             ])
             ->toolbarActions([
                 CreateAction::make()
