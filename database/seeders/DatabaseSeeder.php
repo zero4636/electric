@@ -71,38 +71,6 @@ class DatabaseSeeder extends Seeder
         $this->command->info('');
     }
 
-        /**
-         * Helper: Đọc file CSV và trả về array of records
-         */
-        private function readCSV(string $filename): array
-        {
-            $filePath = database_path("csv/{$filename}");
-        
-            if (!file_exists($filePath)) {
-                $this->command->warn("⚠️  File không tồn tại: {$filename}");
-                return [];
-            }
-
-            $records = [];
-            $handle = fopen($filePath, 'r');
-        
-            // Đọc header
-            $headers = fgetcsv($handle);
-        
-            // Đọc dữ liệu
-            while (($data = fgetcsv($handle)) !== false) {
-                $record = [];
-                foreach ($headers as $index => $header) {
-                    $record[$header] = $data[$index] ?? null;
-                }
-                $records[] = $record;
-            }
-        
-            fclose($handle);
-        
-            return $records;
-        }
-
     private function createAdminUser(): void
     {
         $email = 'admin@example.com';

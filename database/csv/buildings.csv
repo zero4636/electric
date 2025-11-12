@@ -1,0 +1,50 @@
+﻿code,name,substation_code,address,floors,status
+BLD-001,"Nhà SVĐ",VVL,"Đại học Bách Khoa Hà Nội",,ACTIVE
+BLD-002,"Nhà B",VVL,"Đại học Bách Khoa Hà Nội",,ACTIVE
+BLD-003,"Nhà Số 10 TQB",B1,"Đại học Bách Khoa Hà Nội",,ACTIVE
+BLD-004,"Nhà A15",B1,"Đại học Bách Khoa Hà Nội",,ACTIVE
+BLD-005,"Nhà B1",B1,"Đại học Bách Khoa Hà Nội",,ACTIVE
+BLD-006,"Nhà B7 BIS",ĐCĐT,"Đại học Bách Khoa Hà Nội",,ACTIVE
+BLD-007,"Nhà D2A",TVĐT,"Đại học Bách Khoa Hà Nội",,ACTIVE
+BLD-008,"Nhà D2B",BK3B,"Đại học Bách Khoa Hà Nội",,ACTIVE
+BLD-009,"Nhà D2D",BK3B,"Đại học Bách Khoa Hà Nội",,ACTIVE
+BLD-010,"Nhà D6",TVĐT,"Đại học Bách Khoa Hà Nội",,ACTIVE
+BLD-011,"Nhà A17",B1,"Đại học Bách Khoa Hà Nội",,ACTIVE
+BLD-012,"Nhà TC",THCK,"Đại học Bách Khoa Hà Nội",,ACTIVE
+BLD-013,"Nhà Bể bơi",B1,"Đại học Bách Khoa Hà Nội",,ACTIVE
+BLD-014,"Nhà D3",ĐLK,"Đại học Bách Khoa Hà Nội",,ACTIVE
+BLD-015,"Nhà D5",ĐLK,"Đại học Bách Khoa Hà Nội",,ACTIVE
+BLD-016,"Nhà D9",ĐLK,"Đại học Bách Khoa Hà Nội",,ACTIVE
+BLD-017,"Nhà TVĐT",TVĐT,"Đại học Bách Khoa Hà Nội",,ACTIVE
+BLD-018,"Nhà C9",BK3B,"Đại học Bách Khoa Hà Nội",,ACTIVE
+BLD-019,"Nhà C5",BK2,"Đại học Bách Khoa Hà Nội",,ACTIVE
+BLD-020,"Nhà D8",D8,"Đại học Bách Khoa Hà Nội",,ACTIVE
+BLD-021,"Nhà Ngõ 17",THCK,"Đại học Bách Khoa Hà Nội",,ACTIVE
+BLD-022,"Nhà C",THCK,"Đại học Bách Khoa Hà Nội",,ACTIVE
+BLD-023,"Nhà KTX",KTX,"Đại học Bách Khoa Hà Nội",,ACTIVE
+BLD-024,"Nhà C8B",ĐCĐT,"Đại học Bách Khoa Hà Nội",,ACTIVE
+BLD-025,"Nhà T",THCK,"Đại học Bách Khoa Hà Nội",,ACTIVE
+BLD-026,"Nhà B4",KTX,"Đại học Bách Khoa Hà Nội",,ACTIVE
+BLD-027,"Nhà A",,"Đại học Bách Khoa Hà Nội",,ACTIVE
+BLD-028,"Nhà D6B",TVĐT,"Đại học Bách Khoa Hà Nội",,ACTIVE
+BLD-029,"Nhà C10",ĐCĐT,"Đại học Bách Khoa Hà Nội",,ACTIVE
+BLD-030,"Nhà C10B",BK2,"Đại học Bách Khoa Hà Nội",,ACTIVE
+BLD-031,"Nhà C3B",ĐCĐT,"Đại học Bách Khoa Hà Nội",,ACTIVE
+BLD-032,"Nhà D2C",BK3B,"Đại học Bách Khoa Hà Nội",,ACTIVE
+BLD-033,"Nhà C6",BK2,"Đại học Bách Khoa Hà Nội",,ACTIVE
+BLD-034,"Nhà C1B",BK2,"Đại học Bách Khoa Hà Nội",,ACTIVE
+BLD-035,"Nhà Ngõ 15",KTX,"Đại học Bách Khoa Hà Nội",,ACTIVE
+BLD-036,"Nhà 15 TQB",KTX,"Đại học Bách Khoa Hà Nội",,ACTIVE
+BLD-037,"Nhà F",B1,"Đại học Bách Khoa Hà Nội",,ACTIVE
+BLD-038,"Nhà Ngõ 42",THCK,"Đại học Bách Khoa Hà Nội",,ACTIVE
+BLD-039,"Nhà C4B",BK2,"Đại học Bách Khoa Hà Nội",,ACTIVE
+BLD-040,"Nhà 11 TQB",B1,"Đại học Bách Khoa Hà Nội",,ACTIVE
+BLD-041,"Nhà C3",BK2,"Đại học Bách Khoa Hà Nội",,ACTIVE
+BLD-042,"Nhà B9",KTX,"Đại học Bách Khoa Hà Nội",,ACTIVE
+BLD-043,"Nhà NTĐ",SVĐ,"Đại học Bách Khoa Hà Nội",,ACTIVE
+BLD-044,"Nhà BB",B1,"Đại học Bách Khoa Hà Nội",,ACTIVE
+BLD-045,"Nhà D4",TVĐT,"Đại học Bách Khoa Hà Nội",,ACTIVE
+BLD-046,"Nhà C7",C7,"Đại học Bách Khoa Hà Nội",,ACTIVE
+BLD-047,"Nhà C4",BK2,"Đại học Bách Khoa Hà Nội",,ACTIVE
+BLD-048,"Nhà B10",KTX,"Đại học Bách Khoa Hà Nội",,ACTIVE
+BLD-049,"Nhà B7",KTX,"Đại học Bách Khoa Hà Nội",,ACTIVE

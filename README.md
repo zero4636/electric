@@ -30,6 +30,7 @@ docker compose up -d
 #### 2. Cài đặt dependencies
 ```bash
 docker compose exec cli composer install
+docker compose exec cli npm install
 ```
 
 #### 3. Tạo file environment
@@ -86,32 +87,7 @@ docker compose exec cli php artisan tinker
 
 ## � Import Dữ Liệu CSV
 
-### Cách 1: Import từ file CSV thô (Dữ liệu thực tế)
-
-Nếu bạn có file CSV thô từ hệ thống cũ (như file `storage/app/data.csv`), sử dụng script để làm sạch và tách dữ liệu:
-
-```bash
-# Đặt file CSV gốc vào storage/app/data.csv
-# Sau đó chạy script parse
-docker compose exec cli php scripts/parse-csv-data.php
-```
-
-Script sẽ tự động:
-- ✅ Loại bỏ header/footer thừa
-- ✅ Lọc dữ liệu không hợp lệ
-- ✅ Tách thành 5 file CSV chuẩn trong `database/csv/`
-- ✅ Mapping quan hệ giữa các bảng (codes, foreign keys)
-- ✅ Xử lý nhiều công tơ trong 1 dòng
-- ✅ Tính toán consumption tự động
-
-Sau khi parse xong, chạy seeder:
-```bash
-docker compose exec cli php artisan db:seed
-```
-
-### Cách 2: Sử dụng file CSV chuẩn có sẵn
-
-Hệ thống đã có sẵn file CSV mẫu trong thư mục `database/csv/`:
+Hệ thống hỗ trợ import dữ liệu từ file CSV trong thư mục `database/csv/`:
 
 ### Cấu trúc file CSV:
 
@@ -188,42 +164,6 @@ docker compose exec cli php artisan db:seed --class=ElectricMeterSeeder
    - `type`: ORGANIZATION, UNIT, CONSUMER
    - `status`: ACTIVE, INACTIVE, MAINTENANCE
 
-### File CSV thô (data.csv):
-
-File `storage/app/data.csv` là bảng tổng hợp thực tế từ hệ thống cũ với cấu trúc:
-
-| Cột | Nội dung | Mapping vào bảng |
-|-----|----------|------------------|
-| 1 | STT | - |
-| 2 | Hộ tiêu thụ điện | organization_units.name |
-| 3 | Đơn vị chủ quản | organization_units.parent |
-| 4 | Địa chỉ | organization_units.address |
-| 5-6 | Điện thoại | organization_units.contact_phone |
-| 7 | Đại diện | organization_units.contact_person |
-| 8 | Nhà/Tòa nhà | buildings.name |
-| 9 | Tầng | - |
-| 10 | Số công tơ | electric_meters.meter_number |
-| 11 | Loại công tơ | Xác định tariff_type_id |
-| 12 | Vị trí đặt công tơ | electric_meters.location |
-| 13 | Trạm biến áp | substations.code |
-| 14 | Trang | - |
-| 15 | Chỉ số mới | meter_readings.current_reading |
-| 16 | Chỉ số cũ | meter_readings.previous_reading |
-| 17 | Hệ số nhân | meter_readings.multiplier |
-| 18 | Tổng tiêu thụ | Tính toán từ (15-16)*17 |
-| 19 | Bao cấp | electric_meters.subsidized_kwh |
-| 20 | Điện năng phải trả | bill_details.chargeable_kwh |
-| 21 | Đơn giá | electricity_tariffs.price_per_kwh |
-| 22 | Thành tiền | bill_details.amount |
-| 23 | Người thực hiện | - |
-
-**Script tự động xử lý:**
-- Loại bỏ 3 dòng header thừa
-- Loại bỏ dòng tổng cộng cuối file
-- Tách nhiều công tơ trong 1 ô (vd: "9094, 4383" → 2 records)
-- Tự động mapping codes giữa các bảng
-- Tạo 2 kỳ chỉ số (tháng 5 và tháng 6/2025)
-
 ## 🗄️ Database Schema
 
 ### Các bảng chính:
@@ -268,9 +208,6 @@ File `storage/app/data.csv` là bảng tổng hợp thực tế từ hệ thốn
 ## � Lệnh Hữu Ích
 
 ```bash
-# Parse file CSV thô thành các file chuẩn
-docker compose exec cli php scripts/parse-csv-data.php
-
 # Reset database và import lại
 docker compose exec cli php artisan migrate:fresh --seed
 
