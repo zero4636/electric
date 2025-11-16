@@ -40,7 +40,6 @@ class OrganizationUnitsTable
                         'warning' => 'CONSUMER',
                     ])
                     ->formatStateUsing(fn (string $state): string => match ($state) {
-                        'ORGANIZATION' => 'Tổ chức',
                         'UNIT' => 'Đơn vị',
                         'CONSUMER' => 'Hộ tiêu thụ',
                         default => $state,
@@ -115,7 +114,6 @@ class OrganizationUnitsTable
                 SelectFilter::make('type')
                     ->label('Loại đơn vị')
                     ->options([
-                        'ORGANIZATION' => 'Tổ chức',
                         'UNIT' => 'Đơn vị',
                         'CONSUMER' => 'Hộ tiêu thụ',
                     ])

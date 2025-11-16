@@ -38,7 +38,6 @@ class OrganizationUnitForm
                     Select::make('type')
                         ->label('Loại đơn vị')
                         ->options([
-                            'ORGANIZATION' => 'Tổ chức',
                             'UNIT' => 'Đơn vị',
                             'CONSUMER' => 'Hộ tiêu thụ',
                         ])

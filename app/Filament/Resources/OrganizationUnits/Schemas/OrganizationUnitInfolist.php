@@ -29,7 +29,6 @@ class OrganizationUnitInfolist
                                 'purple' => 'CONSUMER',
                             ])
                             ->formatStateUsing(fn (string $state): string => match ($state) {
-                                'ORGANIZATION' => 'Tổ chức',
                                 'UNIT' => 'Đơn vị',
                                 'CONSUMER' => 'Khách hàng',
                                 default => $state,
