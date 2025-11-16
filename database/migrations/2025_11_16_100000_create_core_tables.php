@@ -21,7 +21,6 @@ return new class extends Migration
             $table->string('name');
             $table->string('code')->unique()->nullable();
             $table->enum('type', ['UNIT', 'CONSUMER'])->comment('UNIT=Đơn vị chủ quản, CONSUMER=Hộ tiêu thụ');
-            $table->string('tax_code')->nullable();
             $table->string('email')->nullable();
             $table->text('address')->nullable()->comment('Địa chỉ hộ tiêu thụ điện');
             $table->string('building')->nullable()->comment('Nhà/Tòa nhà');

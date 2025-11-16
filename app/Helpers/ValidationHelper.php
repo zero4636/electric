@@ -96,7 +96,6 @@ class ValidationHelper
             'contact_name' => 'Người đại diện',
             'contact_phone' => 'Số điện thoại',
             'email' => 'Email',
-            'tax_code' => 'Mã số thuế',
             'address' => 'Địa chỉ',
             'notes' => 'Ghi chú',
             
