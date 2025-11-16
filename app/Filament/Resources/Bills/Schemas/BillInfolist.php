@@ -41,13 +41,16 @@ class BillInfolist
                         TextEntry::make('payment_status')
                             ->label('Trạng thái')
                             ->badge()
-                            ->colors([
-                                'warning' => 'PENDING',
-                                'success' => 'PAID',
-                                'danger' => 'OVERDUE',
-                            ])
+                            ->color(fn (string $state): string => match ($state) {
+                                'UNPAID' => 'warning',
+                                'PARTIAL' => 'info',
+                                'PAID' => 'success',
+                                'OVERDUE' => 'danger',
+                                default => 'gray',
+                            })
                             ->formatStateUsing(fn (string $state): string => match ($state) {
-                                'PENDING' => 'Chưa thanh toán',
+                                'UNPAID' => 'Chưa thanh toán',
+                                'PARTIAL' => 'Thanh toán 1 phần',
                                 'PAID' => 'Đã thanh toán',
                                 'OVERDUE' => 'Quá hạn',
                                 default => $state,
@@ -70,21 +73,22 @@ class BillInfolist
                                     ->label('Mã công tơ')
                                     ->weight('bold')
                                     ->copyable(),
-                                TextEntry::make('old_reading')
-                                    ->label('Chỉ số cũ')
-                                    ->numeric(2)
-                                    ->suffix(' kWh'),
-                                TextEntry::make('new_reading')
-                                    ->label('Chỉ số mới')
-                                    ->numeric(2)
-                                    ->suffix(' kWh'),
                                 TextEntry::make('consumption')
                                     ->label('Tiêu thụ')
                                     ->numeric(2)
                                     ->suffix(' kWh')
                                     ->badge()
-                                    ->color('info')
-                                    ->getStateUsing(fn ($record) => $record->new_reading - $record->old_reading),
+                                    ->color('info'),
+                                TextEntry::make('subsidized_applied')
+                                    ->label('Bao cấp')
+                                    ->numeric(2)
+                                    ->suffix(' kWh')
+                                    ->placeholder('—'),
+                                TextEntry::make('chargeable_kwh')
+                                    ->label('Tính tiền')
+                                    ->numeric(2)
+                                    ->suffix(' kWh')
+                                    ->weight('bold'),
                                 TextEntry::make('amount')
                                     ->label('Thành tiền')
                                     ->money('VND')

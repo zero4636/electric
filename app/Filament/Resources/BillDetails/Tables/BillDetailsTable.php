@@ -14,41 +14,39 @@ class BillDetailsTable
     {
         return $table
             ->columns([
-                TextColumn::make('bill.billing_date')
-                    ->label('Ngày HĐ')
-                    ->date('d/m/Y')
-                    ->sortable(),
+                TextColumn::make('bill.billing_month')
+                    ->label('Tháng HĐ')
+                    ->date('m/Y')
+                    ->sortable()
+                    ->badge()
+                    ->color('info'),
                 TextColumn::make('electricMeter.meter_number')
                     ->label('Công tơ')
                     ->sortable()
                     ->copyable()
                     ->searchable(),
-                TextColumn::make('startReading.reading_value')
-                    ->label('Chỉ số đầu')
-                    ->numeric(decimalPlaces: 2)
-                    ->alignRight()
-                    ->placeholder('—'),
-                TextColumn::make('endReading.reading_value')
-                    ->label('Chỉ số cuối')
-                    ->numeric(decimalPlaces: 2)
-                    ->alignRight()
-                    ->placeholder('—'),
                 TextColumn::make('consumption')
                     ->label('Tiêu thụ')
                     ->numeric(decimalPlaces: 2)
                     ->suffix(' kWh')
                     ->sortable()
+                    ->alignRight(),
+                TextColumn::make('subsidized_applied')
+                    ->label('Bao cấp')
+                    ->numeric(decimalPlaces: 2)
+                    ->suffix(' kWh')
+                    ->placeholder('—')
+                    ->alignRight(),
+                TextColumn::make('chargeable_kwh')
+                    ->label('Tính tiền')
+                    ->numeric(decimalPlaces: 2)
+                    ->suffix(' kWh')
                     ->weight('bold')
                     ->alignRight(),
                 TextColumn::make('price_per_kwh')
                     ->label('Đơn giá')
                     ->money('VND', true)
                     ->sortable()
-                    ->alignRight(),
-                TextColumn::make('subsidized_amount')
-                    ->label('Hỗ trợ')
-                    ->money('VND', true)
-                    ->placeholder('—')
                     ->alignRight(),
                 TextColumn::make('amount')
                     ->label('Thành tiền')

@@ -19,7 +19,13 @@ class ElectricMetersRelationManager extends RelationManager
     {
         return $table
             ->columns([
-                TextColumn::make('meter_number')->label('Mã công tơ')->sortable()->searchable(),
+                TextColumn::make('meter_number')
+                    ->label('Mã công tơ')
+                    ->sortable()
+                    ->searchable()
+                    ->url(fn ($record) => route('filament.admin.resources.electric-meters.view', ['record' => $record]))
+                    ->color('primary')
+                    ->icon('heroicon-o-arrow-top-right-on-square'),
                 TextColumn::make('substation.name')->label('Trạm điện')->sortable(),
                 TextColumn::make('meter_type')
                     ->label('Loại')

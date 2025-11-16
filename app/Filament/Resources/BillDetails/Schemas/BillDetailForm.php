@@ -13,23 +13,57 @@ class BillDetailForm
     {
         return $schema
             ->components([
-                Section::make('Chi tiết')
+                Section::make('Chi tiết hóa đơn')
                     ->columns(2)
                     ->components([
                         Select::make('bill_id')
                             ->label('Hóa đơn')
-                            ->relationship('bill','id')
-                            ->required(),
+                            ->relationship('bill', 'id', fn($query) => $query->with('organizationUnit'))
+                            ->getOptionLabelFromRecordUsing(fn ($record) => "#{$record->id} - {$record->organizationUnit->name} - " . $record->billing_month->format('m/Y'))
+                            ->required()
+                            ->searchable(),
 
                         Select::make('electric_meter_id')
                             ->label('Công tơ')
                             ->relationship('electricMeter','meter_number')
+                            ->searchable()
                             ->required(),
 
-                        TextInput::make('consumption')->label('Tiêu thụ (kWh)')->numeric()->required(),
-                        TextInput::make('price_per_kwh')->label('Đơn giá')->numeric()->required(),
-                        TextInput::make('hsn')->label('Số sê-ri')->numeric()->required(),
-                        TextInput::make('amount')->label('Thành tiền')->numeric()->required(),
+                        TextInput::make('consumption')
+                            ->label('Tiêu thụ (kWh)')
+                            ->numeric()
+                            ->step(0.01)
+                            ->required(),
+                        
+                        TextInput::make('subsidized_applied')
+                            ->label('Bao cấp (kWh)')
+                            ->numeric()
+                            ->step(0.01)
+                            ->default(0),
+                        
+                        TextInput::make('chargeable_kwh')
+                            ->label('Tính tiền (kWh)')
+                            ->numeric()
+                            ->step(0.01),
+                        
+                        TextInput::make('price_per_kwh')
+                            ->label('Đơn giá (VNĐ/kWh)')
+                            ->numeric()
+                            ->step(0.01)
+                            ->required(),
+                        
+                        TextInput::make('hsn')
+                            ->label('Hệ số nhân')
+                            ->numeric()
+                            ->step(0.01)
+                            ->default(1)
+                            ->required(),
+                        
+                        TextInput::make('amount')
+                            ->label('Thành tiền (VNĐ)')
+                            ->numeric()
+                            ->step(0.01)
+                            ->required(),
                     ]),
             ]);
     }

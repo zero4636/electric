@@ -40,17 +40,18 @@ class ElectricMetersTable
                     ->color('info')
                     ->placeholder('—'),
                     
-                TextColumn::make('building')
+                TextColumn::make('organizationUnit.building')
                     ->label('Nhà/Tòa')
                     ->searchable()
                     ->placeholder('—')
                     ->toggleable(),
                     
-                TextColumn::make('floor')
-                    ->label('Tầng')
+                TextColumn::make('organizationUnit.address')
+                    ->label('Địa chỉ')
                     ->searchable()
+                    ->limit(40)
                     ->placeholder('—')
-                    ->toggleable(),
+                    ->toggleable(isToggledHiddenByDefault: true),
                     
                 TextColumn::make('installation_location')
                     ->label('Vị trí đặt công tơ')
@@ -159,12 +160,20 @@ class ElectricMetersTable
                     
                 SelectFilter::make('building')
                     ->label('Nhà/Tòa nhà')
-                    ->options(fn () => \App\Models\ElectricMeter::query()
+                    ->options(fn () => \App\Models\OrganizationUnit::query()
+                        ->where('type', 'CONSUMER')
                         ->whereNotNull('building')
                         ->distinct()
                         ->pluck('building', 'building')
                         ->toArray()
                     )
+                    ->query(function ($query, $data) {
+                        if (!empty($data['value'])) {
+                            $query->whereHas('organizationUnit', function ($q) use ($data) {
+                                $q->where('building', $data['value']);
+                            });
+                        }
+                    })
                     ->searchable(),
             ])
             ->bulkActions([

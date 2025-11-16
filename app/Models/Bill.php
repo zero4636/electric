@@ -14,13 +14,15 @@ class Bill extends Model
 
     protected $fillable = [
         'organization_unit_id',
-        'billing_date',
+        'billing_month',
+        'due_date',
         'total_amount',
-        'status',
+        'payment_status',
     ];
 
     protected $casts = [
-        'billing_date' => 'date',
+        'billing_month' => 'date',
+        'due_date' => 'date',
         'total_amount' => 'decimal:2',
     ];
 
@@ -31,26 +33,11 @@ class Bill extends Model
     {
         return [
             'organization_unit_id' => ['required', 'exists:organization_units,id'],
-            'billing_date' => ['required', 'date'],
+            'billing_month' => ['required', 'date'],
+            'due_date' => ['required', 'date'],
             'total_amount' => ['required', 'numeric', 'min:0', 'max:999999999999.99'],
-            'status' => ['required', 'in:PENDING,PAID,CANCELLED'],
+            'payment_status' => ['required', 'in:UNPAID,PARTIAL,PAID,OVERDUE'],
         ];
-    }
-
-    /**
-     * Calculate total from bill details
-     */
-    public function calculateTotal()
-    {
-        return $this->billDetails()->sum('amount');
-    }
-
-    /**
-     * Update total amount from bill details
-     */
-    public function updateTotal()
-    {
-        $this->update(['total_amount' => $this->calculateTotal()]);
     }
 
     public function organizationUnit()

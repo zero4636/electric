@@ -61,8 +61,8 @@ class ElectricMeterResource extends Resource
     {
         return [
             'index' => ListElectricMeters::route('/'),
-            'view' => ViewElectricMeter::route('/{record}'),
             'create' => CreateElectricMeter::route('/create'),
+            'view' => ViewElectricMeter::route('/{record}'),
             'edit' => EditElectricMeter::route('/{record}/edit'),
         ];
     }

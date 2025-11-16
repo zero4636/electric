@@ -54,19 +54,27 @@ class OrganizationUnitsTable
                     ->placeholder('—')
                     ->toggleable(),
                     
-                TextColumn::make('contact_name')
-                    ->label('Người đại diện')
+                TextColumn::make('building')
+                    ->label('Nhà/Tòa')
                     ->searchable()
+                    ->badge()
+                    ->color('info')
                     ->placeholder('—')
                     ->toggleable(),
                     
+                TextColumn::make('contact_name')
+                    ->label('Người liên hệ')
+                    ->searchable()
+                    ->placeholder('—')
+                    ->toggleable(isToggledHiddenByDefault: true),
+                    
                 TextColumn::make('contact_phone')
-                    ->label('Điện thoại')
+                    ->label('SĐT liên hệ')
                     ->searchable()
                     ->copyable()
                     ->placeholder('—')
                     ->icon('heroicon-o-phone')
-                    ->toggleable(),
+                    ->toggleable(isToggledHiddenByDefault: true),
                     
                 TextColumn::make('address')
                     ->label('Địa chỉ')

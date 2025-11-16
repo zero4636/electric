@@ -14,14 +14,15 @@ use Illuminate\Support\Facades\Log;
 class CsvDataImporter extends Seeder
 {
     private array $substations = [];
-    private array $organizations = [];
+    private array $units = [];
+    private array $consumers = [];
     
     /**
      * Run the database seeds.
      */
     public function run(): void
     {
-        $csvPath = storage_path('app/data.csv');
+    $csvPath = storage_path('app/Bảng tổng hợp thu tháng 10 năm 2025.csv');
         
         if (!file_exists($csvPath)) {
             $this->command->error("CSV file not found at: {$csvPath}");
@@ -33,20 +34,17 @@ class CsvDataImporter extends Seeder
         DB::beginTransaction();
         
         try {
-            // Step 1: Create parent organization (HĐKT)
-            $this->createParentOrganization();
-            
-            // Step 2: Parse CSV and extract unique substations and organizations
+            // Step 1: Parse CSV rows
             $csvData = $this->parseCSV($csvPath);
             
-            // Step 3: Create substations
+            // Step 2: Create substations
             $this->createSubstations($csvData);
             
-            // Step 4: Create organization units
+            // Step 3: Create organization units (two levels: UNIT -> CONSUMER)
             $this->createOrganizationUnits($csvData);
             
-            // Step 5: Import electric meters and readings
-            $this->importMetersAndReadings($csvData);
+            // Step 4: Import electric meters and readings for the CSV month
+            $this->importMetersAndReadings($csvPath, $csvData);
             
             DB::commit();
             
@@ -62,27 +60,10 @@ class CsvDataImporter extends Seeder
             ]);
         }
     }
+    
+    // two-level model, no post-fix needed
 
-    /**
-     * Create parent organization (HĐKT)
-     */
-    private function createParentOrganization(): void
-    {
-        $parent = OrganizationUnit::firstOrCreate(
-            ['code' => 'HDKT'],
-            [
-                'name' => 'Hội đồng Khoa học và Đào tạo',
-                'parent_id' => null,
-                'type' => 'ORGANIZATION',
-                'address' => 'Đại học Bách Khoa Hà Nội',
-                'contact_name' => null,
-                'contact_phone' => null,
-            ]
-        );
-        
-        $this->organizations['HĐKT'] = $parent;
-        $this->command->info("Created parent organization: HĐKT");
-    }
+    // no root organization in two-level model
 
     /**
      * Parse CSV file and return data array
@@ -92,15 +73,20 @@ class CsvDataImporter extends Seeder
         $data = [];
         $handle = fopen($filePath, 'r');
         
-        // Skip first 2 header rows
-        fgetcsv($handle);
-        fgetcsv($handle);
-        
-        // Read column headers
+        // Read first header line
         $headers = fgetcsv($handle);
-        
-        // Skip the row with (1), (2), etc.
-        fgetcsv($handle);
+        // Some files include an ordinal row like (1),(2),...
+        $maybeOrdinals = fgetcsv($handle);
+        if (!empty($maybeOrdinals) && isset($maybeOrdinals[0]) && preg_match('/^\(1\)/', trim($maybeOrdinals[0] ?? ''))) {
+            // consume it and proceed
+        } else {
+            if ($maybeOrdinals && !empty(array_filter($maybeOrdinals))) {
+                $this->normalizeCsvRow($maybeOrdinals);
+                $first = $this->mapCsvRow($maybeOrdinals);
+                $first['row_number'] = 2;
+                $data[] = $first;
+            }
+        }
         
         $rowNumber = 5; // Start from row 5 (after headers)
         
@@ -110,37 +96,16 @@ class CsvDataImporter extends Seeder
                 continue;
             }
             
+            // Normalize strings
+            $this->normalizeCsvRow($row);
+
             // Skip if no meter number (column 9)
-            if (empty($row[9])) {
+            if (empty($row[9]) || strtolower(trim($row[9])) === 'số công tơ') {
                 continue;
             }
-            
-            $data[] = [
-                'stt' => $row[0] ?? '',
-                'consumer_name' => $row[1] ?? '',
-                'parent_org' => $row[2] ?? '',
-                'address' => $row[3] ?? '',
-                'phone' => $row[4] ?? '',
-                'representative' => $row[5] ?? '',
-                'representative_phone' => $row[6] ?? '',
-                'building' => $row[7] ?? '',
-                'floor' => $row[8] ?? '',
-                'meter_number' => $row[9] ?? '',
-                'phase_type' => $row[10] ?? '',
-                'installation_location' => $row[11] ?? '',
-                'substation' => $row[12] ?? '',
-                'page' => $row[13] ?? '',
-                'new_reading' => $this->parseNumber($row[14] ?? '0'),
-                'old_reading' => $this->parseNumber($row[15] ?? '0'),
-                'hsn' => $this->parseNumber($row[16] ?? '1'),
-                'consumption' => $this->parseNumber($row[17] ?? '0'),
-                'subsidized' => $this->parseNumber($row[18] ?? '0'),
-                'payable_consumption' => $this->parseNumber($row[19] ?? '0'),
-                'unit_price' => $this->parseNumber($row[20] ?? '0'),
-                'amount' => $this->parseNumber($row[21] ?? '0'),
-                'executor' => $row[22] ?? '',
-                'row_number' => $rowNumber++,
-            ];
+            $mapped = $this->mapCsvRow($row);
+            $mapped['row_number'] = $rowNumber++;
+            $data[] = $mapped;
         }
         
         fclose($handle);
@@ -165,7 +130,7 @@ class CsvDataImporter extends Seeder
      */
     private function createSubstations(array $csvData): void
     {
-        $uniqueSubstations = array_unique(array_column($csvData, 'substation'));
+    $uniqueSubstations = array_unique(array_filter(array_map(fn($r) => $r['substation'] ?? '', $csvData)));
         
         foreach ($uniqueSubstations as $substationCode) {
             if (empty($substationCode)) {
@@ -187,54 +152,88 @@ class CsvDataImporter extends Seeder
     }
 
     /**
-     * Create organization units from CSV data
+     * Create organization units (UNIT parent, CONSUMER child or independent)
      */
     private function createOrganizationUnits(array $csvData): void
     {
-        $parentOrg = $this->organizations['HĐKT'];
-        
+        $createdUnits = 0;
+        $createdConsumers = 0;
+        $createdIndependent = 0;
+
         foreach ($csvData as $row) {
-            $orgName = $row['consumer_name'];
+            $unitName = trim($row['parent_org'] ?? '');
+            $consumerName = trim($row['consumer_name'] ?? '');
             
-            if (empty($orgName) || isset($this->organizations[$orgName])) {
+            // Skip if consumer name is empty
+            if ($consumerName === '') {
                 continue;
             }
-            
-            // Determine parent
-            $parentId = $parentOrg->id;
-            if (!empty($row['parent_org']) && $row['parent_org'] !== 'HĐKT') {
-                // If parent organization is specified, find or create it
-                if (!isset($this->organizations[$row['parent_org']])) {
-                    $parent = OrganizationUnit::firstOrCreate(
-                        ['name' => $row['parent_org']],
+
+            // Case 1: Consumer has parent UNIT (standard case)
+            if ($unitName !== '') {
+                // Create/find UNIT (no parent)
+                if (!isset($this->units[$unitName])) {
+                    $unit = OrganizationUnit::firstOrCreate(
+                        ['name' => $unitName, 'type' => 'UNIT'],
                         [
-                            'code' => $this->generateCode($row['parent_org']),
-                            'parent_id' => $parentOrg->id,
-                            'type' => 'ORGANIZATION',
-                            'address' => 'Đại học Bách Khoa Hà Nội',
+                            'code' => $this->generateCode($unitName),
+                            'parent_id' => null,
+                            'type' => 'UNIT',
+                            'address' => null,
+                            'status' => 'ACTIVE',
                         ]
                     );
-                    $this->organizations[$row['parent_org']] = $parent;
+                    $this->units[$unitName] = $unit;
+                    $createdUnits++;
+                } else {
+                    $unit = $this->units[$unitName];
                 }
-                $parentId = $this->organizations[$row['parent_org']]->id;
+
+                // Create/find CONSUMER (child of UNIT)
+                // Use composite key: consumerName + parentId to handle duplicates
+                $consumerKey = $consumerName . '_' . $unit->id;
+                if (!isset($this->consumers[$consumerKey])) {
+                    $consumer = OrganizationUnit::firstOrCreate(
+                        ['name' => $consumerName, 'parent_id' => $unit->id],
+                        [
+                            'code' => $this->generateCode($consumerName),
+                            'parent_id' => $unit->id,
+                            'type' => 'CONSUMER',
+                            'contact_phone' => $row['phone'] ?? null,
+                            'address' => $row['address'] ?? null,
+                            'building' => $row['building'] ?? null,
+                            'contact_name' => $row['representative'] ?? null,
+                            'status' => 'ACTIVE',
+                        ]
+                    );
+                    $this->consumers[$consumerKey] = $consumer;
+                    $createdConsumers++;
+                }
+            } 
+            // Case 2: Independent consumer (Hợp đồng tự do) - no parent UNIT
+            else {
+                $consumerKey = $consumerName . '_independent';
+                if (!isset($this->consumers[$consumerKey])) {
+                    $consumer = OrganizationUnit::firstOrCreate(
+                        ['name' => $consumerName, 'parent_id' => null, 'type' => 'CONSUMER'],
+                        [
+                            'code' => $this->generateCode($consumerName),
+                            'parent_id' => null,
+                            'type' => 'CONSUMER',
+                            'contact_phone' => $row['phone'] ?? null,
+                            'address' => $row['address'] ?? null,
+                            'building' => $row['building'] ?? null,
+                            'contact_name' => $row['representative'] ?? null,
+                            'status' => 'ACTIVE',
+                        ]
+                    );
+                    $this->consumers[$consumerKey] = $consumer;
+                    $createdIndependent++;
+                }
             }
-            
-            $org = OrganizationUnit::firstOrCreate(
-                ['name' => $orgName],
-                [
-                    'code' => $this->generateCode($orgName),
-                    'parent_id' => $parentId,
-                    'type' => 'CONSUMER',
-                    'contact_phone' => $row['phone'],
-                    'address' => $row['address'],
-                    'contact_name' => $row['representative'],
-                ]
-            );
-            
-            $this->organizations[$orgName] = $org;
         }
-        
-        $this->command->info("Created " . (count($this->organizations) - 1) . " organization units");
+
+        $this->command->info("Created {$createdUnits} units, {$createdConsumers} consumers, and {$createdIndependent} independent consumers");
     }
 
     /**
@@ -272,29 +271,61 @@ class CsvDataImporter extends Seeder
     /**
      * Import electric meters and meter readings
      */
-    private function importMetersAndReadings(array $csvData): void
+    private function importMetersAndReadings(string $csvPath, array $csvData): void
     {
         $imported = 0;
         $skipped = 0;
+        $ym = $this->parseMonthYearFromFilename($csvPath) ?? ['2025','10'];
+        $startDate = \Carbon\Carbon::createFromFormat('Y-m-d', sprintf('%04d-%02d-01', $ym[0], $ym[1]));
+        $endDate = $startDate->copy()->endOfMonth();
         
         foreach ($csvData as $row) {
             try {
-                // Get organization
-                if (!isset($this->organizations[$row['consumer_name']])) {
-                    $this->command->warn("Organization not found: {$row['consumer_name']}");
+                // Get UNIT and CONSUMER
+                $unitName = trim($row['parent_org'] ?? '');
+                $consumerName = trim($row['consumer_name'] ?? '');
+                
+                if ($consumerName === '') {
                     $skipped++;
                     continue;
+                }
+                
+                // Determine consumer key based on whether it has a parent UNIT
+                $consumerKey = null;
+                $org = null;
+                
+                if ($unitName !== '') {
+                    // Standard consumer with parent UNIT
+                    $unit = $this->units[$unitName] ?? null;
+                    if (!$unit) {
+                        $this->command->warn("Unit not found: {$unitName}");
+                        $skipped++;
+                        continue;
+                    }
+                    
+                    $consumerKey = $consumerName . '_' . $unit->id;
+                    $org = $this->consumers[$consumerKey] ?? null;
+                    if (!$org) {
+                        $this->command->warn("Consumer not found: {$consumerName} (under {$unitName})");
+                        $skipped++;
+                        continue;
+                    }
+                } else {
+                    // Independent consumer (Hợp đồng tự do)
+                    $consumerKey = $consumerName . '_independent';
+                    $org = $this->consumers[$consumerKey] ?? null;
+                    if (!$org) {
+                        $this->command->warn("Independent consumer not found: {$consumerName}");
+                        $skipped++;
+                        continue;
+                    }
                 }
                 
                 // Get substation
-                if (!isset($this->substations[$row['substation']])) {
-                    $this->command->warn("Substation not found: {$row['substation']}");
-                    $skipped++;
-                    continue;
+                $substation = null;
+                if (!empty($row['substation']) && isset($this->substations[$row['substation']])) {
+                    $substation = $this->substations[$row['substation']];
                 }
-                
-                $org = $this->organizations[$row['consumer_name']];
-                $substation = $this->substations[$row['substation']];
                 
                 // Determine phase type
                 $phaseType = null;
@@ -328,28 +359,23 @@ class CsvDataImporter extends Seeder
                     ['meter_number' => $row['meter_number']],
                     [
                         'organization_unit_id' => $org->id,
-                        'substation_id' => $substation->id,
+                        'substation_id' => $substation?->id,
                         'tariff_type_id' => $tariffTypeId,
-                        'building' => $row['building'],
-                        'floor' => $row['floor'],
                         'installation_location' => $row['installation_location'],
                         'meter_type' => $meterType,
                         'phase_type' => $phaseType,
                         'hsn' => $row['hsn'],
-                        'subsidized_kwh' => $row['subsidized'],
+                        'subsidized_kwh' => 0,
                         'status' => 'ACTIVE',
                     ]
                 );
                 
-                // Create meter reading for June 2025
-                $readingDate = '2025-06-30';
-                
                 // Create old reading (beginning of month)
-                if ($row['old_reading'] > 0) {
+                if ($row['old_reading'] >= 0) {
                     MeterReading::updateOrCreate(
                         [
                             'electric_meter_id' => $meter->id,
-                            'reading_date' => '2025-06-01',
+                            'reading_date' => $startDate->toDateString(),
                         ],
                         [
                             'reading_value' => $row['old_reading'],
@@ -358,11 +384,11 @@ class CsvDataImporter extends Seeder
                 }
                 
                 // Create new reading (end of month)
-                if ($row['new_reading'] > 0) {
+                if ($row['new_reading'] >= 0) {
                     MeterReading::updateOrCreate(
                         [
                             'electric_meter_id' => $meter->id,
-                            'reading_date' => $readingDate,
+                            'reading_date' => $endDate->toDateString(),
                         ],
                         [
                             'reading_value' => $row['new_reading'],
@@ -383,5 +409,52 @@ class CsvDataImporter extends Seeder
         }
         
         $this->command->info("Import complete: {$imported} meters imported, {$skipped} skipped");
+    }
+
+    private function normalizeCsvRow(array &$row): void
+    {
+        foreach ($row as $k => $v) {
+            if (is_string($v)) {
+                $row[$k] = trim(preg_replace('/\s+/', ' ', $v));
+            }
+        }
+    }
+
+    private function mapCsvRow(array $row): array
+    {
+        return [
+            'stt' => $row[0] ?? '',
+            'consumer_name' => $row[1] ?? '',
+            'parent_org' => $row[2] ?? '',
+            'address' => $row[3] ?? '',
+            'phone' => $row[4] ?? '',
+            'representative' => $row[5] ?? '',
+            // row[6] = Điện thoại người đại diện (bỏ qua - không lưu)
+            'building' => $row[7] ?? '',
+            'floor' => $row[8] ?? '',
+            'meter_number' => $row[9] ?? '',
+            'phase_type' => $row[10] ?? '',
+            'installation_location' => $row[11] ?? '',
+            'substation' => $row[12] ?? '',
+            'page' => $row[13] ?? '',
+            'new_reading' => $this->parseNumber($row[14] ?? '0'),
+            'old_reading' => $this->parseNumber($row[15] ?? '0'),
+            'hsn' => $this->parseNumber($row[16] ?? '1'),
+            'consumption' => $this->parseNumber($row[17] ?? '0'),
+            'subsidized' => $this->parseNumber($row[18] ?? '0'),
+            'payable_consumption' => $this->parseNumber($row[19] ?? '0'),
+            'unit_price' => $this->parseNumber($row[20] ?? '0'),
+            'amount' => $this->parseNumber($row[21] ?? '0'),
+            'executor' => $row[22] ?? '',
+        ];
+    }
+
+    private function parseMonthYearFromFilename(string $csvPath): ?array
+    {
+        $basename = basename($csvPath);
+        if (preg_match('/tháng\s+(\d{1,2})\s+năm\s+(\d{4})/ui', $basename, $m)) {
+            return [$m[2], $m[1]]; // [year, month]
+        }
+        return null;
     }
 }

@@ -12,173 +12,202 @@ use Illuminate\Support\Facades\DB;
 
 class BillingService
 {
-    /**
-     * Generate bill for organization unit for a specific period
-     *
-     * @param int $organizationUnitId
-     * @param Carbon $billingDate
-     * @param Carbon $fromDate
-     * @param Carbon $toDate
-     * @return Bill
-     */
-    public function generateBill(
-        int $organizationUnitId,
-        Carbon $billingDate,
-        Carbon $fromDate,
-        Carbon $toDate
-    ): Bill {
-        return DB::transaction(function () use ($organizationUnitId, $billingDate, $fromDate, $toDate) {
-            // Create bill
-            $bill = Bill::create([
-                'organization_unit_id' => $organizationUnitId,
-                'billing_date' => $billingDate,
-                'total_amount' => 0,
-                'status' => 'PENDING',
-            ]);
+    public function createBillForMeter(ElectricMeter $meter, Carbon $billingMonth, Carbon $dueDate): Bill
+    {
+        return DB::transaction(function () use ($meter, $billingMonth, $dueDate) {
+            // Kiểm tra đã có hóa đơn cho tháng này chưa
+            $existingBill = Bill::where('organization_unit_id', $meter->organization_unit_id)
+                ->where('billing_month', $billingMonth->copy()->startOfMonth())
+                ->first();
 
-            // Get all electric meters for this organization
-            $meters = ElectricMeter::where('organization_unit_id', $organizationUnitId)
-                ->where('status', 'ACTIVE')
-                ->get();
-
-            foreach ($meters as $meter) {
-                $this->createBillDetailForMeter($bill, $meter, $fromDate, $toDate);
+            if ($existingBill) {
+                // Kiểm tra meter này đã có trong bill_details chưa
+                $existingDetail = BillDetail::where('bill_id', $existingBill->id)
+                    ->where('electric_meter_id', $meter->id)
+                    ->first();
+                
+                if ($existingDetail) {
+                    throw new \Exception("Công tơ {$meter->meter_number} đã được tính trong hóa đơn tháng " . $billingMonth->format('m/Y'));
+                }
             }
 
-            // Update total
-            $bill->updateTotal();
+            $bill = Bill::firstOrCreate(
+                [
+                    'organization_unit_id' => $meter->organization_unit_id,
+                    'billing_month' => $billingMonth->copy()->startOfMonth(),
+                ],
+                [
+                    'due_date' => $dueDate,
+                    'total_amount' => 0,
+                    'payment_status' => 'UNPAID',
+                ]
+            );
+
+            // Lấy chỉ số cuối cùng trong tháng thanh toán
+            $endReading = MeterReading::where('electric_meter_id', $meter->id)
+                ->where('reading_date', '<=', $billingMonth->copy()->endOfMonth())
+                ->orderBy('reading_date', 'desc')
+                ->first();
+
+            if (!$endReading) {
+                throw new \Exception("Không tìm thấy chỉ số cho công tơ {$meter->meter_number} trong tháng " . $billingMonth->format('m/Y'));
+            }
+
+            // Tìm bill_detail gần nhất đã thanh toán của meter này
+            $lastBillDetail = BillDetail::where('electric_meter_id', $meter->id)
+                ->whereHas('bill', function($q) use ($billingMonth) {
+                    $q->where('billing_month', '<', $billingMonth->copy()->startOfMonth());
+                })
+                ->orderBy('id', 'desc')
+                ->first();
+
+            if ($lastBillDetail) {
+                // Có lịch sử thanh toán -> Lấy reading từ bill trước
+                $lastBill = $lastBillDetail->bill;
+                $startReading = MeterReading::where('electric_meter_id', $meter->id)
+                    ->where('reading_date', '<=', $lastBill->billing_month->endOfMonth())
+                    ->orderBy('reading_date', 'desc')
+                    ->first();
+                
+                if (!$startReading) {
+                    throw new \Exception("Không tìm thấy chỉ số đầu kỳ cho công tơ {$meter->meter_number}");
+                }
+            } else {
+                // Chưa có lịch sử -> Lấy reading đầu tiên trước endReading
+                $startReading = MeterReading::where('electric_meter_id', $meter->id)
+                    ->where('reading_date', '<', $endReading->reading_date)
+                    ->orderBy('reading_date', 'desc')
+                    ->first();
+
+                if (!$startReading) {
+                    throw new \Exception("Không đủ chỉ số để tính tiêu thụ cho công tơ {$meter->meter_number} (chưa có lịch sử thanh toán)");
+                }
+            }
+
+            $rawConsumption = ($endReading->reading_value - $startReading->reading_value) * $meter->hsn;
+
+            if ($rawConsumption < 0) {
+                throw new \Exception("Tiêu thụ âm cho công tơ {$meter->meter_number}");
+            }
+
+            if ($rawConsumption == 0) {
+                throw new \Exception("Tiêu thụ bằng 0 cho công tơ {$meter->meter_number}");
+            }
+
+            $subsidizedApplied = min($rawConsumption, $meter->subsidized_kwh ?? 0);
+            $chargeableKwh = max(0, $rawConsumption - $subsidizedApplied);
+
+            $tariff = ElectricityTariff::getActiveTariff($meter->tariff_type_id, $billingMonth);
+
+            if (!$tariff) {
+                throw new \Exception("Không tìm thấy biểu giá cho loại công tơ ID: {$meter->tariff_type_id}");
+            }
+
+            $amount = $chargeableKwh * $tariff->price_per_kwh;
+
+            BillDetail::updateOrCreate(
+                [
+                    'bill_id' => $bill->id,
+                    'electric_meter_id' => $meter->id,
+                ],
+                [
+                    'consumption' => $rawConsumption,
+                    'subsidized_applied' => $subsidizedApplied,
+                    'chargeable_kwh' => $chargeableKwh,
+                    'price_per_kwh' => $tariff->price_per_kwh,
+                    'hsn' => $meter->hsn,
+                    'amount' => $amount,
+                ]
+            );
+
+            $bill->update(['total_amount' => $bill->billDetails()->sum('amount')]);
 
             return $bill;
         });
     }
 
-    /**
-     * Create bill detail for a specific meter
-     *
-     * @param Bill $bill
-     * @param ElectricMeter $meter
-     * @param Carbon $fromDate
-     * @param Carbon $toDate
-     * @return BillDetail|null
-     */
-    protected function createBillDetailForMeter(
-        Bill $bill,
-        ElectricMeter $meter,
-        Carbon $fromDate,
-        Carbon $toDate
-    ): ?BillDetail {
-        // Get readings in period
-        $startReading = MeterReading::where('electric_meter_id', $meter->id)
-            ->where('reading_date', '<=', $fromDate)
-            ->orderBy('reading_date', 'desc')
-            ->first();
-
-        $endReading = MeterReading::where('electric_meter_id', $meter->id)
-            ->where('reading_date', '<=', $toDate)
-            ->orderBy('reading_date', 'desc')
-            ->first();
-
-        if (!$startReading || !$endReading || $startReading->id === $endReading->id) {
-            return null;
+    public function createBillForOrganizationUnit(int $organizationUnitId, Carbon $billingMonth, Carbon $dueDate): array
+    {
+        $orgUnit = \App\Models\OrganizationUnit::with('children')->findOrFail($organizationUnitId);
+        
+        $meters = collect();
+        
+        // Case 1: UNIT - get meters from all CONSUMER children
+        if ($orgUnit->type === 'UNIT') {
+            $consumerIds = $orgUnit->children->pluck('id')->toArray();
+            $meters = ElectricMeter::whereIn('organization_unit_id', $consumerIds)
+                ->where('status', 'ACTIVE')
+                ->get();
+        } 
+        // Case 2: Independent CONSUMER (HĐ tự do) - get meters directly
+        elseif ($orgUnit->type === 'CONSUMER' && $orgUnit->parent_id === null) {
+            $meters = ElectricMeter::where('organization_unit_id', $orgUnit->id)
+                ->where('status', 'ACTIVE')
+                ->get();
         }
 
-        // Calculate raw consumption (before subsidized deduction)
-        $rawConsumption = ($endReading->reading_value - $startReading->reading_value) * $meter->hsn;
-
-        if ($rawConsumption <= 0) {
-            return null;
+        if ($meters->isEmpty()) {
+            $entityType = $orgUnit->type === 'UNIT' ? 'đơn vị' : 'hợp đồng';
+            throw new \Exception("Không tìm thấy công tơ hoạt động cho {$entityType} '{$orgUnit->name}'");
         }
 
-        // Apply subsidized kWh allowance
-        $subsidizedApplied = min($rawConsumption, $meter->subsidized_kwh ?? 0);
-        $chargeableKwh = max(0, $rawConsumption - $subsidizedApplied);
+        $billsByOrgUnit = [];
+        $detailsCreated = 0;
+        $errors = [];
 
-        // Get appropriate tariff using tariff_type_id
-        $tariff = ElectricityTariff::getActiveTariff($meter->tariff_type_id, $toDate);
-
-        if (!$tariff) {
-            throw new \Exception("No active tariff found for tariff type ID: {$meter->tariff_type_id}");
+        foreach ($meters as $meter) {
+            try {
+                $bill = $this->createBillForMeter($meter, $billingMonth, $dueDate);
+                $detailsCreated++;
+                
+                // Track bills by organization_unit_id
+                if (!isset($billsByOrgUnit[$bill->organization_unit_id])) {
+                    $billsByOrgUnit[$bill->organization_unit_id] = $bill;
+                }
+            } catch (\Exception $e) {
+                $errors[] = "Công tơ {$meter->meter_number} ({$meter->organizationUnit->name}): {$e->getMessage()}";
+            }
         }
 
-        // Calculate amount based on chargeable consumption only
-        $amount = $chargeableKwh * $tariff->price_per_kwh;
-
-        // Create bill detail
-        return BillDetail::create([
-            'bill_id' => $bill->id,
-            'electric_meter_id' => $meter->id,
-            'consumption' => $rawConsumption,
-            'subsidized_applied' => $subsidizedApplied,
-            'chargeable_kwh' => $chargeableKwh,
-            'price_per_kwh' => $tariff->price_per_kwh,
-            'hsn' => $meter->hsn,
-            'amount' => $amount,
-        ]);
+        return [
+            'bills' => array_values($billsByOrgUnit),
+            'details_created' => $detailsCreated,
+            'total_meters' => $meters->count(),
+            'errors' => $errors,
+        ];
     }
 
-    /**
-     * Generate bills for all organization units for a month
-     *
-     * @param int $year
-     * @param int $month
-     * @return array
-     */
-    public function generateMonthlyBills(int $year, int $month): array
+    // Two-level model, no recursive descent needed
+    // private function getAllDescendantIds(...) removed
+
+    public function createBillsForMeters(array $meterIds, Carbon $billingMonth, Carbon $dueDate): array
     {
-        $billingDate = Carbon::create($year, $month, 1)->endOfMonth();
-        $fromDate = Carbon::create($year, $month, 1)->subMonth();
-        $toDate = Carbon::create($year, $month, 1)->endOfMonth();
+        $results = [
+            'success' => 0,
+            'failed' => 0,
+            'bills' => [],
+            'errors' => [],
+        ];
 
-        $organizationUnits = \App\Models\OrganizationUnit::where('status', 'ACTIVE')
-            ->where('type', 'CONSUMER')
-            ->get();
-
-        $results = [];
-
-        foreach ($organizationUnits as $unit) {
+        $meters = ElectricMeter::whereIn('id', $meterIds)->where('status', 'ACTIVE')->get();
+ 
+        foreach ($meters as $meter) {
             try {
-                $bill = $this->generateBill($unit->id, $billingDate, $fromDate, $toDate);
-                $results[] = [
-                    'success' => true,
-                    'organization_unit_id' => $unit->id,
-                    'bill_id' => $bill->id,
-                    'amount' => $bill->total_amount,
-                ];
+                $bill = $this->createBillForMeter($meter, $billingMonth, $dueDate);
+                $results['success']++;
+                
+                if (!in_array($bill->id, array_column($results['bills'], 'id'))) {
+                    $results['bills'][] = $bill;
+                }
             } catch (\Exception $e) {
-                $results[] = [
-                    'success' => false,
-                    'organization_unit_id' => $unit->id,
-                    'error' => $e->getMessage(),
+                $results['failed']++;
+                $results['errors'][] = [
+                    'meter_number' => $meter->meter_number,
+                    'message' => $e->getMessage(),
                 ];
             }
         }
 
         return $results;
-    }
-
-    /**
-     * Mark bill as paid
-     *
-     * @param int $billId
-     * @return Bill
-     */
-    public function markAsPaid(int $billId): Bill
-    {
-        $bill = Bill::findOrFail($billId);
-        $bill->update(['status' => 'PAID']);
-        return $bill;
-    }
-
-    /**
-     * Cancel bill
-     *
-     * @param int $billId
-     * @return Bill
-     */
-    public function cancelBill(int $billId): Bill
-    {
-        $bill = Bill::findOrFail($billId);
-        $bill->update(['status' => 'CANCELLED']);
-        return $bill;
     }
 }

@@ -31,14 +31,14 @@ class ElectricMeterInfolist
                 Section::make('Vị trí lắp đặt')
                     ->columns(3)
                     ->components([
-                        TextEntry::make('building')
+                        TextEntry::make('organizationUnit.building')
                             ->label('Tòa nhà')
                             ->placeholder('—'),
-                        TextEntry::make('floor')
-                            ->label('Tầng')
+                        TextEntry::make('organizationUnit.address')
+                            ->label('Địa chỉ')
                             ->placeholder('—'),
                         TextEntry::make('installation_location')
-                            ->label('Vị trí chi tiết')
+                            ->label('Vị trí đặt công tơ')
                             ->placeholder('—')
                             ->columnSpanFull(),
                     ]),

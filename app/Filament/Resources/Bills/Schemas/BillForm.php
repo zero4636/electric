@@ -14,27 +14,39 @@ class BillForm
     {
         return $schema
             ->components([
-                Section::make('Bill')
+                Section::make('Hóa đơn')
                     ->columns(2)
                     ->components([
                         Select::make('organization_unit_id')
-                            ->label('Organization Unit')
+                            ->label('Đơn vị')
                             ->relationship('organizationUnit','name')
                             ->required(),
 
-                        DatePicker::make('billing_date')
-                            ->label('Billing Date')
+                        DatePicker::make('billing_month')
+                            ->label('Tháng lập hóa đơn')
+                            ->displayFormat('m/Y')
+                            ->format('Y-m-01')
+                            ->required(),
+
+                        DatePicker::make('due_date')
+                            ->label('Hạn thanh toán')
                             ->required(),
 
                         TextInput::make('total_amount')
-                            ->label('Total Amount')
+                            ->label('Tổng tiền')
                             ->numeric()
                             ->disabled(),
 
-                        Select::make('status')
-                            ->label('Status')
-                            ->options(['PENDING'=>'Pending','PAID'=>'Paid','CANCELLED'=>'Cancelled'])
-                            ->default('PENDING'),
+                        Select::make('payment_status')
+                            ->label('Trạng thái')
+                            ->options([
+                                'UNPAID' => 'Chưa thanh toán',
+                                'PARTIAL' => 'Thanh toán một phần',
+                                'PAID' => 'Đã thanh toán',
+                                'OVERDUE' => 'Quá hạn',
+                            ])
+                            ->default('UNPAID')
+                            ->required(),
                     ]),
             ]);
     }

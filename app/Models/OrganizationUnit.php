@@ -16,6 +16,7 @@ class OrganizationUnit extends Model
         'type',
         'email',
         'address',
+        'building',
         'contact_name',
         'contact_phone',
         'notes',

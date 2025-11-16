@@ -81,7 +81,7 @@ class DatabaseSeeder extends Seeder
                 'code' => 'RESIDENTIAL',
                 'name' => 'Dân cư',
                 'description' => 'Biểu giá điện dành cho hộ gia đình, khu nhà ở',
-                'color' => 'success',
+                'color' => '#22c55e', // green-500 (was 'success')
                 'icon' => 'heroicon-o-home',
                 'status' => 'ACTIVE',
                 'sort_order' => 1,
@@ -90,7 +90,7 @@ class DatabaseSeeder extends Seeder
                 'code' => 'COMMERCIAL',
                 'name' => 'Thương mại',
                 'description' => 'Biểu giá điện dành cho văn phòng, cửa hàng, dịch vụ',
-                'color' => 'primary',
+                'color' => '#3b82f6', // blue-500 (was 'primary')
                 'icon' => 'heroicon-o-building-office',
                 'status' => 'ACTIVE',
                 'sort_order' => 2,
@@ -99,7 +99,7 @@ class DatabaseSeeder extends Seeder
                 'code' => 'INDUSTRIAL',
                 'name' => 'Công nghiệp',
                 'description' => 'Biểu giá điện dành cho nhà máy, xưởng sản xuất',
-                'color' => 'warning',
+                'color' => '#f59e0b', // amber-500 (was 'warning')
                 'icon' => 'heroicon-o-cog',
                 'status' => 'ACTIVE',
                 'sort_order' => 3,
@@ -107,7 +107,7 @@ class DatabaseSeeder extends Seeder
         ];
 
         foreach ($types as $typeData) {
-            TariffType::firstOrCreate(
+            TariffType::updateOrCreate(
                 ['code' => $typeData['code']],
                 $typeData
             );

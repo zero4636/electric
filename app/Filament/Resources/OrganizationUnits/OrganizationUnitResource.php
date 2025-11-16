@@ -17,6 +17,7 @@ use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
 use App\Filament\Resources\OrganizationUnits\RelationManagers\ElectricMetersRelationManager;
 use App\Filament\Resources\OrganizationUnits\RelationManagers\BillsRelationManager;
+use App\Filament\Resources\OrganizationUnits\RelationManagers\ChildrenRelationManager;
 
 class OrganizationUnitResource extends Resource
 {
@@ -55,6 +56,7 @@ class OrganizationUnitResource extends Resource
     public static function getRelations(): array
     {
         return [
+            ChildrenRelationManager::class,
             ElectricMetersRelationManager::class,
             BillsRelationManager::class,
         ];

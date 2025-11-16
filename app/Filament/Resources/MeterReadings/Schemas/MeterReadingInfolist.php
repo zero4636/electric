@@ -54,6 +54,7 @@ class MeterReadingInfolist
                             ->numeric(2)
                             ->suffix(' kWh')
                             ->placeholder('—')
+                            ->icon('heroicon-o-arrow-top-right-on-square')
                             ->url(function ($record) {
                                 if (!$record->electricMeter) {
                                     return null;
@@ -125,6 +126,7 @@ class MeterReadingInfolist
                             ->numeric(2)
                             ->suffix(' kWh')
                             ->placeholder('—')
+                            ->icon('heroicon-o-arrow-top-right-on-square')
                             ->url(function ($record) {
                                 if (!$record->electricMeter) {
                                     return null;

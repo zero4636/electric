@@ -76,24 +76,13 @@ class ElectricMeterForm
                 ]),
 
             Section::make('Vị trí lắp đặt')
-                ->description('Thông tin chi tiết về vị trí công tơ')
-                ->columns(3)
+                ->description('Vị trí đặt công tơ chi tiết')
                 ->schema([
-                    TextInput::make('building')
-                        ->label('Nhà/Tòa nhà')
-                        ->maxLength(100)
-                        ->placeholder('VD: B1, D5, A17'),
-
-                    TextInput::make('floor')
-                        ->label('Tầng')
-                        ->maxLength(50)
-                        ->placeholder('VD: T1, T2, T3'),
-
                     TextInput::make('installation_location')
                         ->label('Vị trí đặt công tơ')
                         ->maxLength(255)
-                        ->columnSpanFull()
-                        ->placeholder('VD: Tủ tổng T1, KTĐ B1'),
+                        ->placeholder('VD: Tủ tổng T1, KTĐ B1, Phòng máy tầng 2')
+                        ->helperText('Vị trí cụ thể của công tơ điện'),
                 ]),
 
             Section::make('Thông số kỹ thuật')

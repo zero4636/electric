@@ -17,8 +17,6 @@ class ElectricMeter extends Model
         'organization_unit_id',
         'substation_id',
         'tariff_type_id',
-        'building',
-        'floor',
         'installation_location',
         'meter_type', // Legacy - will be removed
         'phase_type',

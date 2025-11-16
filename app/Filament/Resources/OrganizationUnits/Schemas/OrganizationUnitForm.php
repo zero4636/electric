@@ -56,16 +56,16 @@ class OrganizationUnitForm
                 ]),
 
             Section::make('Thông tin liên hệ')
-                ->description('Thông tin người đại diện và địa chỉ')
+                ->description('Thông tin người liên hệ và địa chỉ')
                 ->columns(2)
                 ->schema([
                     TextInput::make('contact_name')
-                        ->label('Người đại diện')
+                        ->label('Người liên hệ')
                         ->maxLength(255)
-                        ->placeholder('Tên người đại diện hộ tiêu thụ'),
+                        ->placeholder('Tên người liên hệ chính'),
 
                     TextInput::make('contact_phone')
-                        ->label('Số điện thoại')
+                        ->label('SĐT liên hệ')
                         ->tel()
                         ->maxLength(20)
                         ->placeholder('0912345678'),
@@ -76,16 +76,17 @@ class OrganizationUnitForm
                         ->maxLength(255)
                         ->nullable(),
 
-                    TextInput::make('tax_code')
-                        ->label('Mã số thuế')
-                        ->maxLength(50)
-                        ->nullable(),
-
                     Textarea::make('address')
                         ->label('Địa chỉ hộ tiêu thụ điện')
                         ->rows(2)
                         ->columnSpanFull()
-                        ->placeholder('Nhập địa chỉ đầy đủ'),
+                        ->placeholder('Nhập địa chỉ đầy đủ của hộ tiêu thụ'),
+
+                    TextInput::make('building')
+                        ->label('Nhà/Tòa nhà')
+                        ->maxLength(100)
+                        ->placeholder('VD: B1, D5, SVĐ, A17')
+                        ->helperText('Tên tòa nhà hoặc khu vực'),
                 ]),
 
             Section::make('Ghi chú')

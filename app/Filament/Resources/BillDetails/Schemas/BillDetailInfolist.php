@@ -44,29 +44,31 @@ class BillDetailInfolist
                             ->color('info'),
                     ]),
 
-                Section::make('Chỉ số ghi nhận')
+                Section::make('Tiêu thụ điện')
                     ->columns(4)
                     ->components([
-                        TextEntry::make('old_reading')
-                            ->label('Chỉ số cũ')
-                            ->numeric(2)
-                            ->suffix(' kWh'),
-                        TextEntry::make('new_reading')
-                            ->label('Chỉ số mới')
-                            ->numeric(2)
-                            ->suffix(' kWh'),
                         TextEntry::make('consumption')
-                            ->label('Tiêu thụ')
+                            ->label('Tiêu thụ thực tế')
+                            ->numeric(2)
+                            ->suffix(' kWh')
+                            ->badge()
+                            ->color('info')
+                            ->weight('bold'),
+                        TextEntry::make('subsidized_applied')
+                            ->label('Bao cấp')
+                            ->numeric(2)
+                            ->suffix(' kWh')
+                            ->placeholder('0 kWh'),
+                        TextEntry::make('chargeable_kwh')
+                            ->label('Tính tiền')
                             ->numeric(2)
                             ->suffix(' kWh')
                             ->badge()
                             ->color('warning')
-                            ->weight('bold')
-                            ->getStateUsing(fn ($record) => $record->new_reading - $record->old_reading),
-                        TextEntry::make('reading_date')
-                            ->label('Ngày ghi')
-                            ->date('d/m/Y')
-                            ->icon('heroicon-o-calendar'),
+                            ->weight('bold'),
+                        TextEntry::make('hsn')
+                            ->label('Hệ số nhân')
+                            ->numeric(2),
                     ]),
 
                 Section::make('Tính tiền')
