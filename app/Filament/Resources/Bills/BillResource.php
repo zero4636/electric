@@ -8,12 +8,14 @@ use App\Filament\Resources\Bills\Pages\ListBills;
 use App\Filament\Resources\Bills\Schemas\BillForm;
 use App\Filament\Resources\Bills\Tables\BillsTable;
 use App\Models\Bill;
+use App\Helpers\OrganizationHelper;
 use BackedEnum;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
 use App\Filament\Resources\Bills\RelationManagers\BillDetailsRelationManager;
+use Illuminate\Database\Eloquent\Builder;
 
 class BillResource extends Resource
 {
@@ -33,6 +35,16 @@ class BillResource extends Resource
     }
 
     protected static ?int $navigationSort = 31;
+
+    /**
+     * Scope query để chỉ hiển thị bills của organizations được assign
+     */
+    public static function getEloquentQuery(): Builder
+    {
+        $query = parent::getEloquentQuery();
+        
+        return OrganizationHelper::scopeToUserOrganizations($query);
+    }
 
     public static function form(Schema $schema): Schema
     {

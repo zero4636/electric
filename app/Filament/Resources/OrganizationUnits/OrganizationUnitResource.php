@@ -10,6 +10,7 @@ use App\Filament\Resources\OrganizationUnits\Schemas\OrganizationUnitForm;
 use App\Filament\Resources\OrganizationUnits\Schemas\OrganizationUnitInfolist;
 use App\Filament\Resources\OrganizationUnits\Tables\OrganizationUnitsTable;
 use App\Models\OrganizationUnit;
+use App\Helpers\OrganizationHelper;
 use BackedEnum;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
@@ -18,6 +19,7 @@ use Filament\Tables\Table;
 use App\Filament\Resources\OrganizationUnits\RelationManagers\ElectricMetersRelationManager;
 use App\Filament\Resources\OrganizationUnits\RelationManagers\BillsRelationManager;
 use App\Filament\Resources\OrganizationUnits\RelationManagers\ChildrenRelationManager;
+use Illuminate\Database\Eloquent\Builder;
 
 class OrganizationUnitResource extends Resource
 {
@@ -37,6 +39,16 @@ class OrganizationUnitResource extends Resource
     }
 
     protected static ?int $navigationSort = 11;
+
+    /**
+     * Scope query để chỉ hiển thị organizations mà user được assign
+     */
+    public static function getEloquentQuery(): Builder
+    {
+        $query = parent::getEloquentQuery();
+        
+        return OrganizationHelper::scopeOrganizationUnitsToUser($query);
+    }
 
     public static function form(Schema $schema): Schema
     {

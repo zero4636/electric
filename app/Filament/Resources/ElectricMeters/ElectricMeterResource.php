@@ -8,6 +8,7 @@ use App\Filament\Resources\ElectricMeters\Pages\ListElectricMeters;
 use App\Filament\Resources\ElectricMeters\Schemas\ElectricMeterForm;
 use App\Filament\Resources\ElectricMeters\Tables\ElectricMetersTable;
 use App\Models\ElectricMeter;
+use App\Helpers\OrganizationHelper;
 use BackedEnum;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
@@ -15,6 +16,7 @@ use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
 use App\Filament\Resources\ElectricMeters\Schemas\ElectricMeterInfolist;
 use App\Filament\Resources\ElectricMeters\Pages\ViewElectricMeter;
+use Illuminate\Database\Eloquent\Builder;
 
 class ElectricMeterResource extends Resource
 {
@@ -34,6 +36,16 @@ class ElectricMeterResource extends Resource
     }
 
     protected static ?int $navigationSort = 14;
+
+    /**
+     * Scope query để chỉ hiển thị meters thuộc organizations mà user được assign
+     */
+    public static function getEloquentQuery(): Builder
+    {
+        $query = parent::getEloquentQuery();
+        
+        return OrganizationHelper::scopeToUserOrganizations($query);
+    }
 
     public static function form(Schema $schema): Schema
     {

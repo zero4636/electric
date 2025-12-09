@@ -1,6 +1,45 @@
-# ⚡ Hệ thống Quản lý Điện
+# ⚡ Electric Management System
 
-Quản lý công tơ, chỉ số điện, biểu giá và hóa đơn. Dữ liệu thực được import từ một file CSV duy nhất: `data.csv`.
+[![Laravel](https://img.shields.io/badge/Laravel-11.x-red.svg)](https://laravel.com)
+[![PHP](https://img.shields.io/badge/PHP-8.4-blue.svg)](https://www.php.net)
+[![Filament](https://img.shields.io/badge/Filament-4.x-orange.svg)](https://filamentphp.com)
+[![MariaDB](https://img.shields.io/badge/MariaDB-10.11-green.svg)](https://mariadb.org)
+
+> Hệ thống quản lý điện năng và thu tiền điện toàn diện với Laravel & Filament
+
+Quản lý công tơ, đọc số điện, biểu giá bậc thang và hóa đơn. Dashboard analytics với 10+ widgets thời gian thực.
+
+
+---
+
+## 📊 Tài liệu kỹ thuật
+
+### Tài liệu văn bản
+- **[FEATURES.md](docs/FEATURES.md)**: 📋 **Danh sách đầy đủ 80+ tính năng hệ thống** (Review nhanh)
+- **[RBAC_LOGIC.md](docs/RBAC_LOGIC.md)**: 🔐 **Chi tiết logic phân quyền, flow authorization** (Mới)
+- **[PERMISSION_MATRIX.md](docs/PERMISSION_MATRIX.md)**: 📊 **Ma trận quyền 4 roles x 30 permissions** (Mới)
+- **[SYSTEM_OVERVIEW.md](docs/SYSTEM_OVERVIEW.md)**: Mô hình tổng quan, kiến trúc 3-tier, ERD, use cases (Mermaid diagrams)
+- **[ARCHITECTURE.md](docs/ARCHITECTURE.md)**: Chi tiết kiến trúc, sequence diagrams, data flow (Mermaid diagrams)
+- **[USER_MANUAL.md](docs/USER_MANUAL.md)**: Hướng dẫn sử dụng cho người dùng cuối
+
+### Sơ đồ trực quan (Dễ hiểu, dễ in)
+- **[VISUAL_GUIDE.md](docs/VISUAL_GUIDE.md)**: 🎨 Hướng dẫn render sơ đồ PlantUML (PNG/SVG cho báo cáo)
+- **[ASCII_DIAGRAMS.md](docs/ASCII_DIAGRAMS.md)**: 📐 Sơ đồ ASCII art xem nhanh (không cần tool)
+
+### Sơ đồ PlantUML (Chất lượng cao)
+Trong thư mục `docs/diagrams/`:
+- `system-overview.puml` - Kiến trúc 4 tầng với màu sắc
+- `use-case.puml` - 18 use cases, 4 actors
+- `deployment.puml` - Docker containers + network
+- `sequence-create-reading.puml` - Luồng đọc số chi tiết
+- `erd.puml` - ERD với 8 entities
+
+**Cách sử dụng:**
+1. Mở https://www.plantuml.com/plantuml/uml/
+2. Copy nội dung file `.puml`
+3. Download PNG/SVG → Chèn vào báo cáo
+
+---
 
 ## 1. Yêu cầu
 
