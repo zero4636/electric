@@ -9,6 +9,9 @@ use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Filters\TernaryFilter;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
+use pxlrbt\FilamentExcel\Actions\Tables\ExportAction;
+use pxlrbt\FilamentExcel\Actions\Tables\ExportBulkAction;
+use pxlrbt\FilamentExcel\Exports\ExcelExport;
 
 class OrganizationUnitsTable
 {
@@ -150,8 +153,52 @@ class OrganizationUnitsTable
                         false: fn ($query) => $query->doesntHave('electricMeters'),
                     ),
             ])
+            ->headerActions([
+                ExportAction::make()
+                    ->label('Xuất Excel')
+                    ->color('success')
+                    ->icon('heroicon-o-arrow-down-tray')
+                    ->exports([
+                        ExcelExport::make()
+                            ->fromTable()
+                            ->withFilename(fn () => 'don-vi-to-chuc-' . date('Y-m-d'))
+                            ->withWriterType(\Maatwebsite\Excel\Excel::XLSX)
+                            ->withColumns([
+                                \pxlrbt\FilamentExcel\Columns\Column::make('code')->heading('Mã'),
+                                \pxlrbt\FilamentExcel\Columns\Column::make('name')->heading('Tên đơn vị/Hộ tiêu thụ'),
+                                \pxlrbt\FilamentExcel\Columns\Column::make('type')
+                                    ->heading('Loại')
+                                    ->formatStateUsing(fn ($state) => match($state) {
+                                        'UNIT' => 'Đơn vị',
+                                        'CONSUMER' => 'Hộ tiêu thụ',
+                                        default => $state
+                                    }),
+                                \pxlrbt\FilamentExcel\Columns\Column::make('parent.name')->heading('Đơn vị cấp trên'),
+                                \pxlrbt\FilamentExcel\Columns\Column::make('building')->heading('Nhà/Tòa'),
+                                \pxlrbt\FilamentExcel\Columns\Column::make('address')->heading('Địa chỉ'),
+                                \pxlrbt\FilamentExcel\Columns\Column::make('contact_name')->heading('Người liên hệ'),
+                                \pxlrbt\FilamentExcel\Columns\Column::make('contact_phone')->heading('SĐT'),
+                                \pxlrbt\FilamentExcel\Columns\Column::make('email')->heading('Email'),
+                                \pxlrbt\FilamentExcel\Columns\Column::make('status')
+                                    ->heading('Trạng thái')
+                                    ->formatStateUsing(fn ($state) => $state === 'ACTIVE' ? 'Hoạt động' : 'Ngừng'),
+                                \pxlrbt\FilamentExcel\Columns\Column::make('created_at')
+                                    ->heading('Ngày tạo')
+                                    ->formatStateUsing(fn ($state) => $state?->format('d/m/Y H:i')),
+                            ])
+                    ]),
+            ])
             ->bulkActions([
                 BulkActionGroup::make([
+                    ExportBulkAction::make()
+                        ->label('Xuất đã chọn')
+                        ->color('success')
+                        ->icon('heroicon-o-arrow-down-tray')
+                        ->exports([
+                            ExcelExport::make()
+                                ->fromTable()
+                                ->withFilename(fn () => 'don-vi-to-chuc-selected-' . date('Y-m-d'))
+                        ]),
                     DeleteBulkAction::make(),
                 ]),
             ])

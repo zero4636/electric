@@ -14,6 +14,10 @@ class ElectricMetersRelationManager extends RelationManager
     protected static string $relationship = 'electricMeters';
 
     protected static ?string $recordTitleAttribute = 'meter_number';
+    
+    protected static ?string $title = 'Công tơ điện';
+    
+    protected static ?string $modelLabel = 'Công tơ điện';
 
     public function table(Table $table): Table
     {

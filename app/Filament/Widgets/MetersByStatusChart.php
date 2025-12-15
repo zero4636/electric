@@ -10,6 +10,12 @@ class MetersByStatusChart extends ChartWidget
     protected ?string $heading = 'Tình trạng công tơ';
 
     protected ?string $pollingInterval = '60s';
+    
+    protected int | string | array $columnSpan = 1;
+    
+    protected ?string $maxHeight = '250px';
+    
+    protected static ?int $sort = 8;
 
     protected function getType(): string
     {

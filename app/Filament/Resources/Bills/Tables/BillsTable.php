@@ -12,6 +12,9 @@ use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Select;
 use Filament\Tables\Table;
+use pxlrbt\FilamentExcel\Actions\Tables\ExportAction;
+use pxlrbt\FilamentExcel\Actions\Tables\ExportBulkAction;
+use pxlrbt\FilamentExcel\Exports\ExcelExport;
 
 class BillsTable
 {
@@ -92,10 +95,57 @@ class BillsTable
                                      ->when(isset($data['until']), fn($q) => $q->where('billing_month', '<=', $data['until']));
                     }),
             ])
+            ->headerActions([
+                ExportAction::make()
+                    ->label('Xuất Excel')
+                    ->color('success')
+                    ->icon('heroicon-o-arrow-down-tray')
+                    ->exports([
+                        ExcelExport::make()
+                            ->fromTable()
+                            ->withFilename(fn () => 'hoa-don-dien-' . date('Y-m-d'))
+                            ->withWriterType(\Maatwebsite\Excel\Excel::XLSX)
+                            ->withColumns([
+                                \pxlrbt\FilamentExcel\Columns\Column::make('billing_month')
+                                    ->heading('Tháng')
+                                    ->formatStateUsing(fn ($state) => $state?->format('m/Y')),
+                                \pxlrbt\FilamentExcel\Columns\Column::make('organizationUnit.name')->heading('Đơn vị/Hộ tiêu thụ'),
+                                \pxlrbt\FilamentExcel\Columns\Column::make('organizationUnit.building')->heading('Nhà/Tòa'),
+                                \pxlrbt\FilamentExcel\Columns\Column::make('details_count')->heading('Số công tơ'),
+                                \pxlrbt\FilamentExcel\Columns\Column::make('total_amount')
+                                    ->heading('Tổng tiền (VNĐ)')
+                                    ->formatStateUsing(fn ($state) => number_format($state, 0, ',', '.')),
+                                \pxlrbt\FilamentExcel\Columns\Column::make('payment_status')
+                                    ->heading('Trạng thái')
+                                    ->formatStateUsing(fn ($state) => match($state) {
+                                        'UNPAID' => 'Chưa thanh toán',
+                                        'PARTIAL' => 'Thanh toán 1 phần',
+                                        'PAID' => 'Đã thanh toán',
+                                        'OVERDUE' => 'Quá hạn',
+                                        default => $state
+                                    }),
+                                \pxlrbt\FilamentExcel\Columns\Column::make('due_date')
+                                    ->heading('Hạn thanh toán')
+                                    ->formatStateUsing(fn ($state) => $state?->format('d/m/Y')),
+                                \pxlrbt\FilamentExcel\Columns\Column::make('created_at')
+                                    ->heading('Ngày tạo')
+                                    ->formatStateUsing(fn ($state) => $state?->format('d/m/Y H:i')),
+                            ])
+                    ]),
+            ])
             ->toolbarActions([
                 CreateAction::make()
                     ->label('Tạo Hóa đơn mới'),
                 BulkActionGroup::make([
+                    ExportBulkAction::make()
+                        ->label('Xuất đã chọn')
+                        ->color('success')
+                        ->icon('heroicon-o-arrow-down-tray')
+                        ->exports([
+                            ExcelExport::make()
+                                ->fromTable()
+                                ->withFilename(fn () => 'hoa-don-dien-selected-' . date('Y-m-d'))
+                        ]),
                     DeleteBulkAction::make(),
                 ]),
             ]);

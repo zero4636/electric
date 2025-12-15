@@ -11,6 +11,8 @@ class RecentMeterReadings extends BaseWidget
     protected static ?string $heading = 'Chỉ số công tơ gần đây';
 
     protected int|string|array $columnSpan = 'full';
+    
+    protected static ?int $sort = 3;
 
     public function table(Tables\Table $table): Tables\Table
     {

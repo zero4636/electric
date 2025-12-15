@@ -10,6 +10,10 @@ use Filament\Widgets\StatsOverviewWidget\Stat;
 
 class OverviewStats extends BaseWidget
 {
+    protected int | string | array $columnSpan = 'full';
+    
+    protected static ?int $sort = 1;
+
     protected ?string $pollingInterval = '60s';
 
     protected function getCards(): array

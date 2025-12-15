@@ -11,6 +11,12 @@ class ReadingCoverageChart extends ChartWidget
 {
     protected ?string $heading = 'Tỷ lệ bao phủ đọc số (30 ngày)';
 
+    protected int | string | array $columnSpan = 2;
+    
+    protected ?string $maxHeight = '250px';
+    
+    protected static ?int $sort = 11;
+
     protected ?string $pollingInterval = '60s';
 
     protected function getType(): string

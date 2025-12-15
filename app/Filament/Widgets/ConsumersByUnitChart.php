@@ -10,6 +10,12 @@ class ConsumersByUnitChart extends ChartWidget
 {
     protected ?string $heading = 'Hộ tiêu thụ theo đơn vị';
 
+    protected int | string | array $columnSpan = 1;
+    
+    protected ?string $maxHeight = '250px';
+    
+    protected static ?int $sort = 9;
+
     protected ?string $pollingInterval = '60s';
 
     protected function getType(): string

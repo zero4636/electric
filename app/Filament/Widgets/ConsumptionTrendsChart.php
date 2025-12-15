@@ -3,16 +3,22 @@
 namespace App\Filament\Widgets;
 
 use App\Models\MeterReading;
+use App\Models\ElectricMeter;
 use Filament\Widgets\ChartWidget;
 use Illuminate\Support\Facades\DB;
+use Carbon\Carbon;
 
 class ConsumptionTrendsChart extends ChartWidget
 {
-    protected ?string $heading = 'Tổng sản lượng tiêu thụ (30 ngày)';
+    protected ?string $heading = 'Xu hướng tiêu thụ điện (30 ngày gần nhất)';
 
     protected ?string $pollingInterval = '60s';
 
-    protected int | string | array $columnSpan = 'full';
+    protected int | string | array $columnSpan = 2;
+    
+    protected ?string $maxHeight = '250px';
+    
+    protected static ?int $sort = 7;
 
     protected function getType(): string
     {
@@ -22,51 +28,64 @@ class ConsumptionTrendsChart extends ChartWidget
     protected function getData(): array
     {
         $days = 30;
-        $startDate = now()->subDays($days - 1)->startOfDay();
-        
-        // Get readings grouped by date with consumption calculation
-        $readings = MeterReading::query()
-            ->select(
-                'reading_date',
-                DB::raw('SUM(reading_value) as total_reading')
-            )
-            ->where('reading_date', '>=', $startDate)
-            ->groupBy('reading_date')
-            ->orderBy('reading_date')
-            ->get()
-            ->keyBy(fn($r) => $r->reading_date->format('Y-m-d'));
-
-        // Generate all dates for the range
         $dates = [];
         $values = [];
         
         for ($i = $days - 1; $i >= 0; $i--) {
             $date = now()->subDays($i);
-            $dateKey = $date->format('Y-m-d');
             $dates[] = $date->format('d/m');
             
-            // For demo: use reading count as proxy for consumption
-            // In real scenario: calculate delta from previous readings
-            $count = isset($readings[$dateKey]) 
-                ? MeterReading::whereDate('reading_date', $dateKey)->count()
-                : 0;
-            
-            $values[] = $count;
+            // Tính tiêu thụ thực cho ngày này
+            $consumption = $this->calculateDailyConsumption($date);
+            $values[] = round($consumption, 2);
         }
 
         return [
             'labels' => $dates,
             'datasets' => [
                 [
-                    'label' => 'Số lượt đọc',
+                    'label' => 'Điện năng tiêu thụ (kWh)',
                     'data' => $values,
-                    'borderColor' => '#f59e0b', // amber-500
-                    'backgroundColor' => 'rgba(245, 158, 11, 0.1)',
+                    'borderColor' => '#3b82f6',
+                    'backgroundColor' => 'rgba(59, 130, 246, 0.1)',
                     'fill' => true,
-                    'tension' => 0.3,
+                    'tension' => 0.4,
                 ],
             ],
         ];
+    }
+
+    private function calculateDailyConsumption(Carbon $date): float
+    {
+        $startOfDay = $date->copy()->startOfDay();
+        $endOfDay = $date->copy()->endOfDay();
+        
+        $totalConsumption = 0;
+        
+        // Lấy tất cả readings trong ngày
+        $readings = MeterReading::whereBetween('reading_date', [$startOfDay, $endOfDay])
+            ->with('electricMeter')
+            ->get();
+        
+        foreach ($readings as $reading) {
+            // Tìm reading trước đó
+            $previousReading = MeterReading::where('electric_meter_id', $reading->electric_meter_id)
+                ->where('reading_date', '<', $reading->reading_date)
+                ->orderBy('reading_date', 'desc')
+                ->first();
+            
+            if ($previousReading) {
+                $meter = $reading->electricMeter;
+                $hsn = $meter ? $meter->hsn : 1;
+                $consumption = ($reading->reading_value - $previousReading->reading_value) * $hsn;
+                
+                if ($consumption > 0) {
+                    $totalConsumption += $consumption;
+                }
+            }
+        }
+        
+        return $totalConsumption;
     }
 
     protected function getOptions(): array
@@ -82,7 +101,7 @@ class ConsumptionTrendsChart extends ChartWidget
                 'y' => [
                     'beginAtZero' => true,
                     'ticks' => [
-                        'precision' => 0,
+                        'callback' => 'function(value) { return value + " kWh"; }',
                     ],
                 ],
             ],

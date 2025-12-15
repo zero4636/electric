@@ -14,7 +14,9 @@ class QuickActions extends Widget
 
     protected string $view = 'filament.widgets.quick-actions';
 
-    protected static ?int $sort = -10;
+    protected int | string | array $columnSpan = 'full';
+
+    protected static ?int $sort = 2;
 
     public function getCreateOrgUnitUrl(): string
     {

@@ -8,6 +8,9 @@ use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Columns\BadgeColumn;
 use Filament\Tables\Filters\TernaryFilter;
 use Filament\Tables\Table;
+use pxlrbt\FilamentExcel\Actions\Tables\ExportAction;
+use pxlrbt\FilamentExcel\Actions\Tables\ExportBulkAction;
+use pxlrbt\FilamentExcel\Exports\ExcelExport;
 
 class SubstationsTable
 {
@@ -87,8 +90,52 @@ class SubstationsTable
                         false: fn ($query) => $query->doesntHave('electricMeters'),
                     ),
             ])
+            ->headerActions([
+                ExportAction::make()
+                    ->label('Xuất Excel')
+                    ->color('success')
+                    ->icon('heroicon-o-arrow-down-tray')
+                    ->exports([
+                        ExcelExport::make()
+                            ->fromTable()
+                            ->withFilename(fn () => 'tram-bien-ap-' . date('Y-m-d'))
+                            ->withWriterType(\Maatwebsite\Excel\Excel::XLSX)
+                            ->withColumns([
+                                \pxlrbt\FilamentExcel\Columns\Column::make('code')->heading('Mã trạm'),
+                                \pxlrbt\FilamentExcel\Columns\Column::make('name')->heading('Tên trạm biến áp'),
+                                \pxlrbt\FilamentExcel\Columns\Column::make('location')->heading('Vị trí'),
+                                \pxlrbt\FilamentExcel\Columns\Column::make('capacity')->heading('Công suất (kVA)'),
+                                \pxlrbt\FilamentExcel\Columns\Column::make('voltage_level')->heading('Cấp điện áp'),
+                                \pxlrbt\FilamentExcel\Columns\Column::make('installation_date')
+                                    ->heading('Ngày lắp đặt')
+                                    ->formatStateUsing(fn ($state) => $state?->format('d/m/Y')),
+                                \pxlrbt\FilamentExcel\Columns\Column::make('electric_meters_count')->heading('Số công tơ'),
+                                \pxlrbt\FilamentExcel\Columns\Column::make('status')
+                                    ->heading('Trạng thái')
+                                    ->formatStateUsing(fn ($state) => match($state) {
+                                        'ACTIVE' => 'Hoạt động',
+                                        'INACTIVE' => 'Ngừng',
+                                        'MAINTENANCE' => 'Bảo trì',
+                                        default => $state
+                                    }),
+                                \pxlrbt\FilamentExcel\Columns\Column::make('notes')->heading('Ghi chú'),
+                                \pxlrbt\FilamentExcel\Columns\Column::make('created_at')
+                                    ->heading('Ngày tạo')
+                                    ->formatStateUsing(fn ($state) => $state?->format('d/m/Y H:i')),
+                            ])
+                    ]),
+            ])
             ->bulkActions([
                 BulkActionGroup::make([
+                    ExportBulkAction::make()
+                        ->label('Xuất đã chọn')
+                        ->color('success')
+                        ->icon('heroicon-o-arrow-down-tray')
+                        ->exports([
+                            ExcelExport::make()
+                                ->fromTable()
+                                ->withFilename(fn () => 'tram-bien-ap-selected-' . date('Y-m-d'))
+                        ]),
                     DeleteBulkAction::make(),
                 ]),
             ])

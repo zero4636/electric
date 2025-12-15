@@ -9,6 +9,9 @@ use Filament\Tables\Columns\BadgeColumn;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Filters\TernaryFilter;
 use Filament\Tables\Table;
+use pxlrbt\FilamentExcel\Actions\Tables\ExportAction;
+use pxlrbt\FilamentExcel\Actions\Tables\ExportBulkAction;
+use pxlrbt\FilamentExcel\Exports\ExcelExport;
 
 class ElectricMetersTable
 {
@@ -176,8 +179,53 @@ class ElectricMetersTable
                     })
                     ->searchable(),
             ])
+            ->headerActions([
+                ExportAction::make()
+                    ->label('Xuất Excel')
+                    ->color('success')
+                    ->icon('heroicon-o-arrow-down-tray')
+                    ->exports([
+                        ExcelExport::make()
+                            ->fromTable()
+                            ->withFilename(fn () => 'cong-to-dien-' . date('Y-m-d'))
+                            ->withWriterType(\Maatwebsite\Excel\Excel::XLSX)
+                            ->withColumns([
+                                \pxlrbt\FilamentExcel\Columns\Column::make('meter_number')->heading('Mã công tơ'),
+                                \pxlrbt\FilamentExcel\Columns\Column::make('organizationUnit.name')->heading('Hộ tiêu thụ'),
+                                \pxlrbt\FilamentExcel\Columns\Column::make('organizationUnit.building')->heading('Nhà/Tòa'),
+                                \pxlrbt\FilamentExcel\Columns\Column::make('organizationUnit.address')->heading('Địa chỉ'),
+                                \pxlrbt\FilamentExcel\Columns\Column::make('substation.name')->heading('Trạm biến áp'),
+                                \pxlrbt\FilamentExcel\Columns\Column::make('installation_location')->heading('Vị trí đặt'),
+                                \pxlrbt\FilamentExcel\Columns\Column::make('phase_type')
+                                    ->heading('Loại công tơ')
+                                    ->formatStateUsing(fn ($state) => match($state) {
+                                        '1_PHASE' => '1 pha',
+                                        '3_PHASE' => '3 pha',
+                                        default => $state
+                                    }),
+                                \pxlrbt\FilamentExcel\Columns\Column::make('tariffType.name')->heading('Loại hình'),
+                                \pxlrbt\FilamentExcel\Columns\Column::make('hsn')->heading('HSN'),
+                                \pxlrbt\FilamentExcel\Columns\Column::make('subsidized_kwh')->heading('Bao cấp (kWh)'),
+                                \pxlrbt\FilamentExcel\Columns\Column::make('status')
+                                    ->heading('Trạng thái')
+                                    ->formatStateUsing(fn ($state) => $state === 'ACTIVE' ? 'Hoạt động' : 'Ngừng'),
+                                \pxlrbt\FilamentExcel\Columns\Column::make('created_at')
+                                    ->heading('Ngày tạo')
+                                    ->formatStateUsing(fn ($state) => $state?->format('d/m/Y H:i')),
+                            ])
+                    ]),
+            ])
             ->bulkActions([
                 BulkActionGroup::make([
+                    ExportBulkAction::make()
+                        ->label('Xuất đã chọn')
+                        ->color('success')
+                        ->icon('heroicon-o-arrow-down-tray')
+                        ->exports([
+                            ExcelExport::make()
+                                ->fromTable()
+                                ->withFilename(fn () => 'cong-to-dien-selected-' . date('Y-m-d'))
+                        ]),
                     DeleteBulkAction::make(),
                 ]),
             ])

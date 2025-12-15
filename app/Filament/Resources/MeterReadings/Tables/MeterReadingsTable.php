@@ -11,6 +11,9 @@ use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\Filter;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Select;
+use pxlrbt\FilamentExcel\Actions\Tables\ExportAction;
+use pxlrbt\FilamentExcel\Actions\Tables\ExportBulkAction;
+use pxlrbt\FilamentExcel\Exports\ExcelExport;
 
 class MeterReadingsTable
 {
@@ -68,10 +71,45 @@ class MeterReadingsTable
             ->recordActions([
                 ViewAction::make(),
             ])
+            ->headerActions([
+                ExportAction::make()
+                    ->label('Xuất Excel')
+                    ->color('success')
+                    ->icon('heroicon-o-arrow-down-tray')
+                    ->exports([
+                        ExcelExport::make()
+                            ->fromTable()
+                            ->withFilename(fn () => 'chi-so-cong-to-' . date('Y-m-d'))
+                            ->withWriterType(\Maatwebsite\Excel\Excel::XLSX)
+                            ->withColumns([
+                                \pxlrbt\FilamentExcel\Columns\Column::make('reading_date')
+                                    ->heading('Ngày ghi')
+                                    ->formatStateUsing(fn ($state) => $state?->format('d/m/Y')),
+                                \pxlrbt\FilamentExcel\Columns\Column::make('electricMeter.meter_number')->heading('Mã công tơ'),
+                                \pxlrbt\FilamentExcel\Columns\Column::make('electricMeter.organizationUnit.name')->heading('Hộ tiêu thụ'),
+                                \pxlrbt\FilamentExcel\Columns\Column::make('electricMeter.organizationUnit.building')->heading('Nhà/Tòa'),
+                                \pxlrbt\FilamentExcel\Columns\Column::make('reading_value')->heading('Chỉ số (kWh)'),
+                                \pxlrbt\FilamentExcel\Columns\Column::make('reader_name')->heading('Người ghi'),
+                                \pxlrbt\FilamentExcel\Columns\Column::make('notes')->heading('Ghi chú'),
+                                \pxlrbt\FilamentExcel\Columns\Column::make('created_at')
+                                    ->heading('Ngày tạo')
+                                    ->formatStateUsing(fn ($state) => $state?->format('d/m/Y H:i')),
+                            ])
+                    ]),
+            ])
             ->toolbarActions([
                 CreateAction::make()
                     ->label('Tạo Chỉ số công tơ mới'),
                 BulkActionGroup::make([
+                    ExportBulkAction::make()
+                        ->label('Xuất đã chọn')
+                        ->color('success')
+                        ->icon('heroicon-o-arrow-down-tray')
+                        ->exports([
+                            ExcelExport::make()
+                                ->fromTable()
+                                ->withFilename(fn () => 'chi-so-cong-to-selected-' . date('Y-m-d'))
+                        ]),
                     DeleteBulkAction::make(),
                 ]),
             ]);

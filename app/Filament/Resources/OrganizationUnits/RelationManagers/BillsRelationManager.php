@@ -15,6 +15,10 @@ class BillsRelationManager extends RelationManager
     protected static string $relationship = 'bills';
 
     protected static ?string $recordTitleAttribute = 'id';
+    
+    protected static ?string $title = 'Hóa đơn';
+    
+    protected static ?string $modelLabel = 'Hóa đơn';
 
     public function table(Table $table): Table
     {

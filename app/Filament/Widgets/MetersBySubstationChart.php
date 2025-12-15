@@ -10,6 +10,12 @@ class MetersBySubstationChart extends ChartWidget
 {
     protected ?string $heading = 'Phân bổ công tơ theo trạm';
 
+    protected int | string | array $columnSpan = 2;
+    
+    protected ?string $maxHeight = '250px';
+    
+    protected static ?int $sort = 10;
+
     protected ?string $pollingInterval = '60s';
 
     protected function getType(): string
