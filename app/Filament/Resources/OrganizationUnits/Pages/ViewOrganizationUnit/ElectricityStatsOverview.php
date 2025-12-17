@@ -58,7 +58,10 @@ class ElectricityStatsOverview extends BaseWidget
         // Tính % thay đổi
         $changePercent = 0;
         $trend = 'stable';
-        if ($lastMonthConsumption > 0) {
+        $hasComparison = false;
+        
+        if ($lastMonthConsumption > 0 && $currentMonthConsumption > 0) {
+            $hasComparison = true;
             $changePercent = (($currentMonthConsumption - $lastMonthConsumption) / $lastMonthConsumption) * 100;
             $trend = $changePercent > 0 ? 'increase' : ($changePercent < 0 ? 'decrease' : 'stable');
         }
@@ -80,21 +83,37 @@ class ElectricityStatsOverview extends BaseWidget
         if ($organization->type === 'UNIT') {
             $totalConsumers = $organization->children()->where('type', 'CONSUMER')->count();
         }
+        
+        // Tạo description cho stat tháng hiện tại
+        $currentMonthDescription = '';
+        if ($currentMonthConsumption > 0 && $hasComparison) {
+            // Có dữ liệu cả 2 tháng, hiển thị % thay đổi
+            $currentMonthDescription = abs(round($changePercent, 1)) . '% so với tháng ' . $lastMonth;
+        } elseif ($currentMonthConsumption > 0 && !$hasComparison) {
+            // Có tháng này nhưng không có tháng trước
+            $currentMonthDescription = 'Tháng ' . $lastMonth . ': chưa có dữ liệu';
+        } elseif ($currentMonthConsumption == 0 && $lastMonthConsumption > 0) {
+            // Không có tháng này nhưng có tháng trước
+            $currentMonthDescription = 'Chưa có dữ liệu. Tháng ' . $lastMonth . ': ' . number_format($lastMonthConsumption, 0, ',', '.') . ' kWh';
+        } else {
+            // Không có cả 2 tháng
+            $currentMonthDescription = 'Chưa có dữ liệu ghi nhận';
+        }
 
         $stats = [
             Stat::make('Tiêu thụ tháng này', number_format($currentMonthConsumption, 0, ',', '.') . ' kWh')
-                ->description($changePercent != 0 ? abs(round($changePercent, 1)) . '% so với tháng trước' : 'Không đổi')
-                ->descriptionIcon($trend === 'increase' ? 'heroicon-m-arrow-trending-up' : ($trend === 'decrease' ? 'heroicon-m-arrow-trending-down' : 'heroicon-m-minus'))
-                ->color($trend === 'increase' ? 'danger' : ($trend === 'decrease' ? 'success' : 'gray'))
-                ->chart($this->getSparklineData($meterIds, $currentYear)),
+                ->description($currentMonthDescription)
+                ->descriptionIcon($currentMonthConsumption == 0 ? 'heroicon-m-exclamation-triangle' : ($trend === 'increase' ? 'heroicon-m-arrow-trending-up' : ($trend === 'decrease' ? 'heroicon-m-arrow-trending-down' : 'heroicon-m-information-circle')))
+                ->color($currentMonthConsumption == 0 ? 'warning' : ($trend === 'increase' ? 'danger' : ($trend === 'decrease' ? 'success' : 'gray')))
+                ->chart($this->getSparklineData($meterIds, $currentYear, $currentMonth)),
                 
             Stat::make('Tổng tiêu thụ năm ' . $currentYear, number_format($yearlyConsumption, 0, ',', '.') . ' kWh')
-                ->description('Trung bình: ' . number_format($yearlyConsumption / 12, 0, ',', '.') . ' kWh/tháng')
+                ->description($yearlyConsumption > 0 ? 'Trung bình: ' . number_format($yearlyConsumption / 12, 0, ',', '.') . ' kWh/tháng' : 'Chưa có dữ liệu')
                 ->descriptionIcon('heroicon-m-calendar')
                 ->color('primary'),
                 
             Stat::make('Số tiền tháng này', number_format($currentMonthAmount, 0, ',', '.') . ' đ')
-                ->description('Đơn giá: 3.505 đ/kWh')
+                ->description($currentMonthConsumption > 0 ? 'Đơn giá: 3.505 đ/kWh' : 'Chưa có dữ liệu tiêu thụ')
                 ->descriptionIcon('heroicon-m-banknotes')
                 ->color('warning'),
         ];
@@ -161,12 +180,11 @@ class ElectricityStatsOverview extends BaseWidget
         return round($totalConsumption, 2);
     }
 
-    private function getSparklineData(array $meterIds, int $year): array
+    private function getSparklineData(array $meterIds, int $year, int $currentMonth): array
     {
         $data = [];
-        $currentMonth = now()->month;
         
-        // Lấy 6 tháng gần nhất
+        // Lấy 6 tháng gần nhất (lùi từ tháng hiện tại)
         for ($i = 5; $i >= 0; $i--) {
             $month = $currentMonth - $i;
             $y = $year;

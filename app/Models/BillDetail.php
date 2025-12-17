@@ -4,13 +4,15 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Spatie\Activitylog\Traits\LogsActivity;
+use Spatie\Activitylog\LogOptions;
 
 /**
  * @property int $id
  */
 class BillDetail extends Model
 {
-    use HasFactory;
+    use HasFactory, LogsActivity;
 
     protected $fillable = [
         'bill_id',
@@ -57,5 +59,28 @@ class BillDetail extends Model
     public function electricMeter()
     {
         return $this->belongsTo(ElectricMeter::class);
+    }
+
+    public function getActivitylogOptions(): LogOptions
+    {
+        return LogOptions::defaults()
+            ->logOnly([
+                'bill_id',
+                'electric_meter_id',
+                'consumption',
+                'subsidized_applied',
+                'chargeable_kwh',
+                'price_per_kwh',
+                'hsn',
+                'amount',
+            ])
+            ->logOnlyDirty()
+            ->dontSubmitEmptyLogs()
+            ->setDescriptionForEvent(fn(string $eventName) => match ($eventName) {
+                'created' => 'Tạo mới chi tiết hóa đơn',
+                'updated' => 'Cập nhật chi tiết hóa đơn',
+                'deleted' => 'Xóa chi tiết hóa đơn',
+                default => "Thao tác {$eventName} trên chi tiết hóa đơn",
+            });
     }
 }

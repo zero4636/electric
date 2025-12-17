@@ -213,7 +213,16 @@ class ElectricMetersTable
                                     ->heading('Ngày tạo')
                                     ->formatStateUsing(fn ($state) => $state?->format('d/m/Y H:i')),
                             ])
-                    ]),
+                    ])
+                    ->after(function () {
+                        activity()
+                            ->causedBy(auth()->user())
+                            ->withProperties([
+                                'file_name' => 'cong-to-dien-' . date('Y-m-d') . '.xlsx',
+                                'export_type' => 'all',
+                            ])
+                            ->log('Xuất danh sách công tơ điện');
+                    }),
             ])
             ->bulkActions([
                 BulkActionGroup::make([
@@ -225,7 +234,17 @@ class ElectricMetersTable
                             ExcelExport::make()
                                 ->fromTable()
                                 ->withFilename(fn () => 'cong-to-dien-selected-' . date('Y-m-d'))
-                        ]),
+                        ])
+                        ->after(function ($records) {
+                            activity()
+                                ->causedBy(auth()->user())
+                                ->withProperties([
+                                    'file_name' => 'cong-to-dien-selected-' . date('Y-m-d') . '.xlsx',
+                                    'export_type' => 'selected',
+                                    'record_count' => $records->count(),
+                                ])
+                                ->log('Xuất công tơ điện đã chọn');
+                        }),
                     DeleteBulkAction::make(),
                 ]),
             ])

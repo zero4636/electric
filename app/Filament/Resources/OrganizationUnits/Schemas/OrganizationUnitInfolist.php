@@ -33,6 +33,10 @@ class OrganizationUnitInfolist
                                 'CONSUMER' => 'Khách hàng',
                                 default => $state,
                             }),
+                        TextEntry::make('notes')
+                            ->label('Ghi chú')
+                            ->placeholder('—')
+                            ->columnSpanFull(),
                     ]),
 
                 Section::make('Cấp bậc')
@@ -102,7 +106,9 @@ class OrganizationUnitInfolist
                             ->label('Email')
                             ->placeholder('—')
                             ->copyable(),
-                    ]),
+                    ])
+                    ->description('Thông tin liên hệ của đơn vị/hộ tiêu thụ. Cập nhật để thuận tiện cho việc gửi thông báo và hóa đơn.')
+                    ->collapsible(),
 
                 Section::make('Địa chỉ')
                     ->columns(2)
@@ -116,15 +122,9 @@ class OrganizationUnitInfolist
                             ->placeholder('—')
                             ->badge()
                             ->color('info'),
-                    ]),
-
-                Section::make('Ghi chú')
-                    ->components([
-                        TextEntry::make('notes')
-                            ->label('Ghi chú')
-                            ->placeholder('—')
-                            ->columnSpanFull(),
-                    ]),
+                    ])
+                    ->description('Địa chỉ chi tiết giúp xác định vị trí lắp đặt công tơ điện.')
+                    ->collapsible(),
             ]);
     }
 }

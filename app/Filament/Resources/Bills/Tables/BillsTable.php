@@ -131,7 +131,16 @@ class BillsTable
                                     ->heading('Ngày tạo')
                                     ->formatStateUsing(fn ($state) => $state?->format('d/m/Y H:i')),
                             ])
-                    ]),
+                    ])
+                    ->after(function () {
+                        activity()
+                            ->causedBy(auth()->user())
+                            ->withProperties([
+                                'file_name' => 'hoa-don-dien-' . date('Y-m-d') . '.xlsx',
+                                'export_type' => 'all',
+                            ])
+                            ->log('Xuất danh sách hóa đơn');
+                    }),
             ])
             ->toolbarActions([
                 CreateAction::make()
@@ -145,7 +154,17 @@ class BillsTable
                             ExcelExport::make()
                                 ->fromTable()
                                 ->withFilename(fn () => 'hoa-don-dien-selected-' . date('Y-m-d'))
-                        ]),
+                        ])
+                        ->after(function ($records) {
+                            activity()
+                                ->causedBy(auth()->user())
+                                ->withProperties([
+                                    'file_name' => 'hoa-don-dien-selected-' . date('Y-m-d') . '.xlsx',
+                                    'export_type' => 'selected',
+                                    'record_count' => $records->count(),
+                                ])
+                                ->log('Xuất hóa đơn đã chọn');
+                        }),
                     DeleteBulkAction::make(),
                 ]),
             ]);

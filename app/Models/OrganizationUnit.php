@@ -4,10 +4,12 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Spatie\Activitylog\Traits\LogsActivity;
+use Spatie\Activitylog\LogOptions;
 
 class OrganizationUnit extends Model
 {
-    use HasFactory;
+    use HasFactory, LogsActivity;
 
     protected $fillable = [
         'parent_id',
@@ -23,6 +25,20 @@ class OrganizationUnit extends Model
         'status',
         'password_hash',
     ];
+    
+    public function getActivitylogOptions(): LogOptions
+    {
+        return LogOptions::defaults()
+            ->logOnly(['name', 'code', 'type', 'status', 'parent_id', 'email', 'contact_name', 'contact_phone', 'address', 'building', 'notes'])
+            ->logOnlyDirty()
+            ->dontSubmitEmptyLogs()
+            ->setDescriptionForEvent(fn(string $eventName) => match($eventName) {
+                'created' => 'Tạo mới đơn vị/hộ tiêu thụ',
+                'updated' => 'Cập nhật thông tin',
+                'deleted' => 'Xóa đơn vị/hộ tiêu thụ',
+                default => $eventName,
+            });
+    }
 
     public function parent()
     {

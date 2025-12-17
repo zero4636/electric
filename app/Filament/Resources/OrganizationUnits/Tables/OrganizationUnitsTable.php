@@ -186,7 +186,16 @@ class OrganizationUnitsTable
                                     ->heading('Ngày tạo')
                                     ->formatStateUsing(fn ($state) => $state?->format('d/m/Y H:i')),
                             ])
-                    ]),
+                    ])
+                    ->after(function () {
+                        activity()
+                            ->causedBy(auth()->user())
+                            ->withProperties([
+                                'file_name' => 'don-vi-to-chuc-' . date('Y-m-d') . '.xlsx',
+                                'export_type' => 'all',
+                            ])
+                            ->log('Xuất danh sách đơn vị/hộ tiêu thụ');
+                    }),
             ])
             ->bulkActions([
                 BulkActionGroup::make([
@@ -198,7 +207,17 @@ class OrganizationUnitsTable
                             ExcelExport::make()
                                 ->fromTable()
                                 ->withFilename(fn () => 'don-vi-to-chuc-selected-' . date('Y-m-d'))
-                        ]),
+                        ])
+                        ->after(function ($records) {
+                            activity()
+                                ->causedBy(auth()->user())
+                                ->withProperties([
+                                    'file_name' => 'don-vi-to-chuc-selected-' . date('Y-m-d') . '.xlsx',
+                                    'export_type' => 'selected',
+                                    'record_count' => $records->count(),
+                                ])
+                                ->log('Xuất đơn vị/hộ tiêu thụ đã chọn');
+                        }),
                     DeleteBulkAction::make(),
                 ]),
             ])

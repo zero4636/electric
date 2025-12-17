@@ -87,12 +87,24 @@ class ListSubstations extends ListRecords
                 ->action(function (array $data) {
                     try {
                         $filePath = Storage::path($data['file']);
+                        $fileName = basename($data['file']);
                         $import = new SubstationImport();
                         
                         Excel::import($import, $filePath);
                         
                         $errors = $import->getErrors();
                         $successCount = $import->getSuccessCount();
+                        
+                        // Log import activity
+                        activity()
+                            ->causedBy(auth()->user())
+                            ->withProperties([
+                                'file_name' => $fileName,
+                                'success_count' => $successCount,
+                                'error_count' => count($errors),
+                                'errors' => !empty($errors) ? array_slice($errors, 0, 10) : null,
+                            ])
+                            ->log('Import trạm biến áp');
                         
                         if (!empty($errors)) {
                             Notification::make()
@@ -112,6 +124,15 @@ class ListSubstations extends ListRecords
                         Storage::delete($data['file']);
                         
                     } catch (\Exception $e) {
+                        // Log failed import
+                        activity()
+                            ->causedBy(auth()->user())
+                            ->withProperties([
+                                'file_name' => basename($data['file'] ?? 'unknown'),
+                                'error_message' => $e->getMessage(),
+                            ])
+                            ->log('Import trạm biến áp thất bại');
+                        
                         Notification::make()
                             ->title('Lỗi import!')
                             ->body($e->getMessage())

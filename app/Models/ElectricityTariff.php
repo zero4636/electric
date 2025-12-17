@@ -4,13 +4,15 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Spatie\Activitylog\Traits\LogsActivity;
+use Spatie\Activitylog\LogOptions;
 
 /**
  * @property int $id
  */
 class ElectricityTariff extends Model
 {
-    use HasFactory;
+    use HasFactory, LogsActivity;
 
     protected $fillable = [
         'tariff_type_id',
@@ -85,5 +87,24 @@ class ElectricityTariff extends Model
             })
             ->orderBy('effective_from', 'desc')
             ->first();
+    }
+
+    public function getActivitylogOptions(): LogOptions
+    {
+        return LogOptions::defaults()
+            ->logOnly([
+                'tariff_type_id',
+                'price_per_kwh',
+                'effective_from',
+                'effective_to',
+            ])
+            ->logOnlyDirty()
+            ->dontSubmitEmptyLogs()
+            ->setDescriptionForEvent(fn(string $eventName) => match ($eventName) {
+                'created' => 'Tạo mới biểu giá điện',
+                'updated' => 'Cập nhật biểu giá điện',
+                'deleted' => 'Xóa biểu giá điện',
+                default => "Thao tác {$eventName} trên biểu giá điện",
+            });
     }
 }

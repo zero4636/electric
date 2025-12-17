@@ -52,6 +52,13 @@ class OrganizationUnitForm
                         ])
                         ->default('ACTIVE')
                         ->required(),
+                    
+                    Textarea::make('notes')
+                        ->label('Ghi chú')
+                        ->rows(3)
+                        ->columnSpanFull()
+                        ->placeholder('Thông tin bổ sung, lưu ý đặc biệt...')
+                        ->nullable(),
                 ]),
 
             Section::make('Thông tin liên hệ')
@@ -86,17 +93,6 @@ class OrganizationUnitForm
                         ->maxLength(100)
                         ->placeholder('VD: B1, D5, SVĐ, A17')
                         ->helperText('Tên tòa nhà hoặc khu vực'),
-                ]),
-
-            Section::make('Ghi chú')
-                ->description('Thông tin bổ sung')
-                ->collapsed()
-                ->schema([
-                    Textarea::make('notes')
-                        ->label('Ghi chú')
-                        ->rows(3)
-                        ->columnSpanFull()
-                        ->nullable(),
                 ]),
         ];
     }

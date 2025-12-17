@@ -4,10 +4,12 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Spatie\Activitylog\Traits\LogsActivity;
+use Spatie\Activitylog\LogOptions;
 
 class ElectricMeter extends Model
 {
-    use HasFactory;
+    use HasFactory, LogsActivity;
 
     /**
      * @property int $id
@@ -70,5 +72,29 @@ class ElectricMeter extends Model
     public function billDetails()
     {
         return $this->hasMany(BillDetail::class);
+    }
+
+    public function getActivitylogOptions(): LogOptions
+    {
+        return LogOptions::defaults()
+            ->logOnly([
+                'meter_number',
+                'organization_unit_id',
+                'substation_id',
+                'tariff_type_id',
+                'installation_location',
+                'phase_type',
+                'hsn',
+                'subsidized_kwh',
+                'status',
+            ])
+            ->logOnlyDirty()
+            ->dontSubmitEmptyLogs()
+            ->setDescriptionForEvent(fn(string $eventName) => match ($eventName) {
+                'created' => 'Tạo mới công tơ điện',
+                'updated' => 'Cập nhật thông tin công tơ điện',
+                'deleted' => 'Xóa công tơ điện',
+                default => "Thao tác {$eventName} trên công tơ điện",
+            });
     }
 }

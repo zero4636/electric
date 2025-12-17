@@ -95,7 +95,16 @@ class MeterReadingsTable
                                     ->heading('Ngày tạo')
                                     ->formatStateUsing(fn ($state) => $state?->format('d/m/Y H:i')),
                             ])
-                    ]),
+                    ])
+                    ->after(function () {
+                        activity()
+                            ->causedBy(auth()->user())
+                            ->withProperties([
+                                'file_name' => 'chi-so-cong-to-' . date('Y-m-d') . '.xlsx',
+                                'export_type' => 'all',
+                            ])
+                            ->log('Xuất danh sách chỉ số công tơ');
+                    }),
             ])
             ->toolbarActions([
                 CreateAction::make()
@@ -109,7 +118,17 @@ class MeterReadingsTable
                             ExcelExport::make()
                                 ->fromTable()
                                 ->withFilename(fn () => 'chi-so-cong-to-selected-' . date('Y-m-d'))
-                        ]),
+                        ])
+                        ->after(function ($records) {
+                            activity()
+                                ->causedBy(auth()->user())
+                                ->withProperties([
+                                    'file_name' => 'chi-so-cong-to-selected-' . date('Y-m-d') . '.xlsx',
+                                    'export_type' => 'selected',
+                                    'record_count' => $records->count(),
+                                ])
+                                ->log('Xuất chỉ số công tơ đã chọn');
+                        }),
                     DeleteBulkAction::make(),
                 ]),
             ]);

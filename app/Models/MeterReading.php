@@ -4,13 +4,15 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Spatie\Activitylog\Traits\LogsActivity;
+use Spatie\Activitylog\LogOptions;
 
 /**
  * @property int $id
  */
 class MeterReading extends Model
 {
-    use HasFactory;
+    use HasFactory, LogsActivity;
 
     protected $fillable = [
         'electric_meter_id',
@@ -62,5 +64,25 @@ class MeterReading extends Model
     public function electricMeter()
     {
         return $this->belongsTo(ElectricMeter::class);
+    }
+
+    public function getActivitylogOptions(): LogOptions
+    {
+        return LogOptions::defaults()
+            ->logOnly([
+                'electric_meter_id',
+                'reading_date',
+                'reading_value',
+                'reader_name',
+                'notes',
+            ])
+            ->logOnlyDirty()
+            ->dontSubmitEmptyLogs()
+            ->setDescriptionForEvent(fn(string $eventName) => match ($eventName) {
+                'created' => 'Ghi nhận chỉ số công tơ',
+                'updated' => 'Cập nhật chỉ số công tơ',
+                'deleted' => 'Xóa chỉ số công tơ',
+                default => "Thao tác {$eventName} trên chỉ số công tơ",
+            });
     }
 }
