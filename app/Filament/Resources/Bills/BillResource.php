@@ -5,6 +5,7 @@ namespace App\Filament\Resources\Bills;
 use App\Filament\Resources\Bills\Pages\CreateBill;
 use App\Filament\Resources\Bills\Pages\EditBill;
 use App\Filament\Resources\Bills\Pages\ListBills;
+use App\Filament\Resources\Bills\Pages\ViewBill;
 use App\Filament\Resources\Bills\Schemas\BillForm;
 use App\Filament\Resources\Bills\Tables\BillsTable;
 use App\Models\Bill;
@@ -68,6 +69,7 @@ class BillResource extends Resource
         return [
             'index' => ListBills::route('/'),
             'create' => CreateBill::route('/create'),
+            'view' => ViewBill::route('/{record}'),
             'edit' => EditBill::route('/{record}/edit'),
         ];
     }

@@ -51,11 +51,10 @@ class MeterReading extends Model
             ->orderBy('reading_date', 'desc')
             ->first();
 
-        if (!$previousReading) {
-            return 0;
-        }
-
-        $rawConsumption = $this->reading_value - $previousReading->reading_value;
+        // If no previous reading, assume previous value was 0
+        $previousValue = $previousReading ? $previousReading->reading_value : 0;
+        
+        $rawConsumption = $this->reading_value - $previousValue;
         $hsn = $this->electricMeter->hsn ?? 1;
         
         return $rawConsumption * $hsn;

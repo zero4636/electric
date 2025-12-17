@@ -5,6 +5,9 @@ namespace App\Filament\Resources\Bills\Tables;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\CreateAction;
 use Filament\Actions\DeleteBulkAction;
+use Filament\Actions\EditAction;
+use Filament\Actions\ViewAction;
+use Filament\Actions\DeleteAction;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Columns\BadgeColumn;
 use Filament\Tables\Filters\Filter;
@@ -167,6 +170,13 @@ class BillsTable
                         }),
                     DeleteBulkAction::make(),
                 ]),
+            ])
+            ->recordActions([
+                ViewAction::make(),
+                EditAction::make()
+                    ->visible(fn ($record) => $record->payment_status !== 'PAID'),
+                DeleteAction::make()
+                    ->visible(fn ($record) => $record->payment_status !== 'PAID'),
             ]);
     }
 }

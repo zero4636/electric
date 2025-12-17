@@ -7,6 +7,7 @@ use App\Models\ElectricMeter;
 use App\Models\MeterReading;
 use App\Models\Substation;
 use App\Models\TariffType;
+use App\Models\User;
 use Illuminate\Support\Collection;
 use Maatwebsite\Excel\Concerns\ToCollection;
 use Maatwebsite\Excel\Concerns\WithHeadingRow;
@@ -22,123 +23,207 @@ class ComprehensiveBillingImport implements ToCollection, WithHeadingRow, WithVa
     protected array $errors = [];
     protected int $successCount = 0;
     protected int $organizationsCreated = 0;
+    protected int $organizationsUpdated = 0;
     protected int $metersCreated = 0;
+    protected int $metersUpdated = 0;
     protected int $readingsCreated = 0;
 
     public function collection(Collection $rows)
     {
         DB::transaction(function () use ($rows) {
-            foreach ($rows as $row) {
+            foreach ($rows as $rowIndex => $row) {
                 try {
-                    // 1. Tạo/Cập nhật Đơn vị chủ quản (nếu có)
-                    $parentOrg = null;
-                    if (!empty($row['don_vi_chu_quan'])) {
-                        $parentOrg = OrganizationUnit::firstOrCreate(
-                            ['name' => trim($row['don_vi_chu_quan'])],
+                    // Debug: Log row data
+                    // \Log::info('Processing row ' . ($rowIndex + 1), ['row_data' => $row->toArray()]);
+                    
+                    // Chuẩn hóa truy xuất cột cho schema mới (import-thang-12-2025-merged.csv)
+                    $g = function (array $keys, $default = null) use ($row) {
+                        foreach ($keys as $k) {
+                            if (isset($row[$k]) && $row[$k] !== null) {
+                                $val = is_string($row[$k]) ? trim($row[$k]) : $row[$k];
+                                if ($val !== '') return $val;
+                            }
+                        }
+                        return $default;
+                    };
+
+                    $stt = $g(['stt']);
+
+                    // 1) Resolve Creator (for permission assignment)
+                    $creatorEmail = strtolower((string) $g(['email_nguoi_tao']));
+                    $creatorName = $g(['nguoi_thuc_hien']);
+                    $assignManager = null; // User to assign management
+                    if ($creatorEmail && !preg_match('/admin|hệ thống/u', $creatorName ?? '')) {
+                        $assignManager = User::firstOrCreate(
+                            ['email' => $creatorEmail],
                             [
-                                'code' => 'ORG-' . strtoupper(substr(md5($row['don_vi_chu_quan']), 0, 8)),
+                                'name' => $creatorName ?: explode('@', $creatorEmail)[0],
+                                'password' => bcrypt(str()->random(16)),
+                                'role' => 'admin',
+                            ]
+                        );
+                    }
+
+                    // 2) Create/Update Unit (Đơn vị) if provided
+                    $unitCode = $g(['ma_don_vi']);
+                    $unitName = $g(['ten_don_vi']);
+                    $unitType = $g(['loai_don_vi']) ?: 'Đơn vị tiêu thụ';
+                    $unit = null;
+
+                    if ($unitName || $unitCode) {
+                        // Tránh auto-assign từ Observer; tự xử lý sau
+                        $unit = OrganizationUnit::withoutEvents(function () use ($unitCode, $unitName, $unitType, $g) {
+                            $attrs = [
                                 'type' => 'UNIT',
+                                'name' => $unitName ?: ($unitCode ?: 'Đơn vị không tên'),
+                                'email' => $g(['email_don_vi']),
+                                'address' => $g(['dia_chi_don_vi']),
+                                'building' => null,
+                                'contact_name' => $g(['dai_dien_don_vi']),
+                                'contact_phone' => $g(['sdt_don_vi']),
+                                'notes' => $g(['ghi_chu']),
                                 'status' => 'ACTIVE',
-                            ]
-                        );
-                        if ($parentOrg->wasRecentlyCreated) {
-                            $this->organizationsCreated++;
+                            ];
+                            if ($unitCode) {
+                                $model = OrganizationUnit::firstOrNew(['code' => $unitCode]);
+                            } else {
+                                $model = OrganizationUnit::firstOrNew(['name' => $attrs['name'], 'type' => 'UNIT']);
+                            }
+                            // Ghi đè thông tin (ưu tiên giá trị có trong file)
+                            foreach ($attrs as $k => $v) {
+                                if ($v !== null && $v !== '') {
+                                    $model->{$k} = $v;
+                                }
+                            }
+                            if (!$model->code && $unitCode) $model->code = $unitCode;
+                            if (!$model->exists) {
+                                $this->organizationsCreated++;
+                            } else {
+                                $this->organizationsUpdated++;
+                            }
+                            $model->save();
+                            return $model;
+                        });
+                    }
+
+                    // 3) Create/Update Consumer (Hộ tiêu thụ) if provided
+                    $consumerCode = $g(['ma_ho_tieu_thu']);
+                    $consumerName = $g(['ten_ho_tieu_thu']);
+                    $consumer = null;
+                    if ($consumerName || $consumerCode) {
+                        $consumer = OrganizationUnit::withoutEvents(function () use ($consumerCode, $consumerName, $unit, $g) {
+                            $attrs = [
+                                'type' => 'CONSUMER',
+                                'name' => $consumerName ?: ($consumerCode ?: 'Hộ tiêu thụ không tên'),
+                                'parent_id' => $unit?->id,
+                                'email' => $g(['email_ho']),
+                                'address' => $g(['dia_chi_ho']),
+                                'building' => null,
+                                'contact_name' => $g(['dai_dien_ho']),
+                                'contact_phone' => $g(['sdt_ho']),
+                                'notes' => $g(['ghi_chu']),
+                                'status' => 'ACTIVE',
+                            ];
+                            if ($consumerCode) {
+                                $model = OrganizationUnit::firstOrNew(['code' => $consumerCode]);
+                            } else {
+                                $model = OrganizationUnit::firstOrNew(['name' => $attrs['name'], 'type' => 'CONSUMER', 'parent_id' => $attrs['parent_id']]);
+                            }
+                            foreach ($attrs as $k => $v) {
+                                if ($v !== null && $v !== '') {
+                                    $model->{$k} = $v;
+                                }
+                            }
+                            if (!$model->code && $consumerCode) $model->code = $consumerCode;
+                            if (!$model->exists) {
+                                $this->organizationsCreated++;
+                            } else {
+                                $this->organizationsUpdated++;
+                            }
+                            $model->save();
+                            return $model;
+                        });
+                    }
+
+                    // 4) Assign management permission based on creator email
+                    if ($assignManager) {
+                        foreach ([$unit, $consumer] as $org) {
+                            if ($org) {
+                                if (!$assignManager->organizationUnits()->where('organization_unit_id', $org->id)->exists()) {
+                                    $assignManager->organizationUnits()->attach($org->id);
+                                }
+                            }
                         }
                     }
 
-                    // 2. Tạo/Cập nhật Hộ tiêu thụ
-                    $consumerCode = !empty($row['ma_ho_tieu_thu']) 
-                        ? trim($row['ma_ho_tieu_thu'])
-                        : 'CONS-' . strtoupper(substr(md5($row['ho_tieu_thu_dien']), 0, 8));
-
-                    $consumer = OrganizationUnit::firstOrCreate(
-                        ['code' => $consumerCode],
-                        [
-                            'name' => trim($row['ho_tieu_thu_dien']),
-                            'type' => 'CONSUMER',
-                            'parent_id' => $parentOrg?->id,
-                            'building' => $row['nha_toa'] ?? null,
-                            'address' => $row['dia_chi'] ?? null,
-                            'contact_name' => $row['dai_dien_ho'] ?? null,
-                            'contact_phone' => $row['dien_thoai_nguoi_dai_dien'] ?? null,
-                            'email' => $row['email'] ?? null,
-                            'status' => 'ACTIVE',
-                        ]
-                    );
-                    
-                    if ($consumer->wasRecentlyCreated) {
-                        $this->organizationsCreated++;
-                    }
-
-                    // 3. Tìm/Tạo Trạm biến áp
+                    // 5) Substation and Tariff Type
                     $substation = null;
-                    if (!empty($row['tram_bien_ap'])) {
+                    $subCodeName = $g(['tram_bien_ap']);
+                    if ($subCodeName) {
                         $substation = Substation::firstOrCreate(
-                            ['code' => strtoupper(trim($row['tram_bien_ap']))],
+                            ['code' => strtoupper($subCodeName)],
                             [
-                                'name' => 'Trạm ' . trim($row['tram_bien_ap']),
+                                'name' => 'Trạm ' . $subCodeName,
                                 'status' => 'ACTIVE',
                             ]
                         );
                     }
+                    $phaseTypeStr = (string) $g(['loai_cong_to']);
+                    $phaseType = str_contains($phaseTypeStr, '3') ? '3_PHASE' : '1_PHASE';
+                    $tariffType = TariffType::where('code', 'SINH_HOAT')->first() ?: TariffType::first();
 
-                    // 4. Tìm Loại hình (Tariff Type)
-                    $tariffType = null;
-                    if (!empty($row['loai_cong_to'])) {
-                        $phaseType = str_contains($row['loai_cong_to'], '3') ? '3_PHASE' : '1_PHASE';
-                        // Tìm tariff type phù hợp, mặc định là sinh hoạt
-                        $tariffType = TariffType::where('code', 'SINH_HOAT')->first();
-                        if (!$tariffType) {
-                            $tariffType = TariffType::first(); // Fallback
-                        }
-                    }
+                    // 6) Meters (handle multiple meter numbers if provided)
+                    $meters = array_filter(array_map('trim', preg_split('/[,;]/', (string) $g(['so_cong_to*', 'so_cong_to'], ''))));
+                    $ownerOrg = $consumer ?: $unit; // If consumer empty, assign meter to unit
+                    if ($ownerOrg && !empty($meters)) {
+                        foreach ($meters as $meterNumber) {
+                            if ($meterNumber === '') continue;
+                            $meter = ElectricMeter::firstOrNew(['meter_number' => $meterNumber]);
+                            $isNew = !$meter->exists;
+                            $meter->organization_unit_id = $ownerOrg->id;
+                            $meter->substation_id = $substation?->id;
+                            $meter->tariff_type_id = $tariffType?->id;
+                            $meter->installation_location = $g(['vi_tri_dat']);
+                            $meter->phase_type = $phaseType;
+                            $meter->hsn = (float) str_replace(',', '.', (string) $g(['he_so_nhan'], 1));
+                            $meter->subsidized_kwh = (float) str_replace(',', '.', (string) $g(['bao_cap'], 0));
+                            // meter_type: chọn COMMERCIAL nếu chỉ có Đơn vị, ngược lại RESIDENTIAL
+                            $meter->meter_type = $consumer ? 'RESIDENTIAL' : 'COMMERCIAL';
+                            $meter->status = 'ACTIVE';
+                            $meter->save();
+                            if ($isNew) {
+                                $this->metersCreated++;
+                            } else {
+                                $this->metersUpdated++;
+                            }
 
-                    // 5. Tạo/Cập nhật Công tơ
-                    $meterNumber = trim($row['so_cong_to']);
-                    $phaseType = str_contains($row['loai_cong_to'] ?? '', '3') ? '3_PHASE' : '1_PHASE';
-                    
-                    $meter = ElectricMeter::firstOrCreate(
-                        ['meter_number' => $meterNumber],
-                        [
-                            'organization_unit_id' => $consumer->id,
-                            'substation_id' => $substation?->id,
-                            'tariff_type_id' => $tariffType?->id,
-                            'installation_location' => $row['vi_tri_dat'] ?? null,
-                            'phase_type' => $phaseType,
-                            'hsn' => floatval($row['he_so_nhan'] ?? 1),
-                            'subsidized_kwh' => floatval($row['bao_cap'] ?? 0),
-                            'status' => 'ACTIVE',
-                        ]
-                    );
-                    
-                    if ($meter->wasRecentlyCreated) {
-                        $this->metersCreated++;
-                    }
-
-                    // 6. Tạo chỉ số công tơ (nếu có)
-                    if (!empty($row['chi_so_moi']) && !empty($row['thang_ghi'])) {
-                        $readingDate = $this->parseReadingDate($row['thang_ghi']);
-                        
-                        // Kiểm tra xem đã có chỉ số này chưa
-                        $existingReading = MeterReading::where('electric_meter_id', $meter->id)
-                            ->whereDate('reading_date', $readingDate)
-                            ->first();
-
-                        if (!$existingReading) {
-                            MeterReading::create([
-                                'electric_meter_id' => $meter->id,
-                                'reading_date' => $readingDate,
-                                'reading_value' => floatval(str_replace(',', '', $row['chi_so_moi'])),
-                                'reader_name' => $row['nguoi_thuc_hien'] ?? 'Hệ thống',
-                                'notes' => 'Import từ file CSV tổng hợp',
-                            ]);
-                            $this->readingsCreated++;
+                            // 7) Reading for each meter
+                            $readingVal = $g(['chi_so_moi']);
+                            $monthStr = $g(['thang_ghi']);
+                            if ($readingVal !== null && $readingVal !== '' && $monthStr) {
+                                $readingDate = $this->parseReadingDate($monthStr);
+                                $existingReading = MeterReading::where('electric_meter_id', $meter->id)
+                                    ->whereDate('reading_date', $readingDate)
+                                    ->first();
+                                if (!$existingReading) {
+                                    MeterReading::create([
+                                        'electric_meter_id' => $meter->id,
+                                        'reading_date' => $readingDate,
+                                        'reading_value' => (float) str_replace(',', '', (string) $readingVal),
+                                        'reader_name' => $creatorName ?: ($g(['nguoi_thuc_hien']) ?: 'Hệ thống'),
+                                        'notes' => 'Import tổng hợp CSV',
+                                    ]);
+                                    $this->readingsCreated++;
+                                }
+                            }
                         }
                     }
 
                     $this->successCount++;
+                    // \Log::info('Row processed successfully', ['row' => $rowIndex + 1, 'stt' => $stt]);
                 } catch (\Exception $e) {
-                    $this->errors[] = "Dòng {$row['stt']}: {$e->getMessage()}";
+                    // \Log::error('Row processing failed', ['row' => $rowIndex + 1, 'error' => $e->getMessage()]);
+                    $this->errors[] = "Dòng " . ($rowIndex + 1) . ": {$e->getMessage()}";
                 }
             }
         });
@@ -163,22 +248,13 @@ class ComprehensiveBillingImport implements ToCollection, WithHeadingRow, WithVa
 
     public function rules(): array
     {
-        return [
-            'ho_tieu_thu_dien' => ['required', 'string', 'max:255'],
-            'so_cong_to' => ['required', 'string', 'max:50'],
-            'loai_cong_to' => ['nullable', 'string'],
-            'he_so_nhan' => ['nullable', 'numeric', 'min:0'],
-            'chi_so_moi' => ['nullable', 'string'],
-            'bao_cap' => ['nullable', 'numeric', 'min:0'],
-        ];
+        // Tắt validate cứng để linh hoạt với file CSV đa nguồn; logic import đã tự xử lý thiếu dữ liệu
+        return [];
     }
 
     public function customValidationMessages(): array
     {
-        return [
-            'ho_tieu_thu_dien.required' => 'Tên hộ tiêu thụ là bắt buộc',
-            'so_cong_to.required' => 'Số công tơ là bắt buộc',
-        ];
+        return [];
     }
 
     public function onError(\Throwable $e)
@@ -208,7 +284,9 @@ class ComprehensiveBillingImport implements ToCollection, WithHeadingRow, WithVa
         return [
             'success_count' => $this->successCount,
             'organizations_created' => $this->organizationsCreated,
+            'organizations_updated' => $this->organizationsUpdated,
             'meters_created' => $this->metersCreated,
+            'meters_updated' => $this->metersUpdated,
             'readings_created' => $this->readingsCreated,
         ];
     }

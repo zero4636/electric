@@ -13,16 +13,6 @@
             @if($this->canShowImportButton())
                 {{ ($this->importAction)([]) }}
                 {{ ($this->exportAction)([]) }}
-                
-                <x-filament::button
-                    wire:click="downloadTemplate"
-                    color="gray"
-                    icon="heroicon-o-arrow-down-tray"
-                    outlined
-                    class="w-full"
-                >
-                    Tải mẫu CSV
-                </x-filament::button>
             @endif
         </div>
 

@@ -43,14 +43,12 @@ class BillInfolist
                             ->badge()
                             ->color(fn (string $state): string => match ($state) {
                                 'UNPAID' => 'warning',
-                                'PARTIAL' => 'info',
                                 'PAID' => 'success',
                                 'OVERDUE' => 'danger',
                                 default => 'gray',
                             })
                             ->formatStateUsing(fn (string $state): string => match ($state) {
                                 'UNPAID' => 'Chưa thanh toán',
-                                'PARTIAL' => 'Thanh toán 1 phần',
                                 'PAID' => 'Đã thanh toán',
                                 'OVERDUE' => 'Quá hạn',
                                 default => $state,

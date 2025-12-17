@@ -91,16 +91,16 @@ class QuickActions extends Widget implements HasForms, HasActions
                     ->helperText('Hỗ trợ: CSV, XLSX, XLS • Tối đa: 5MB')
                     ->disk('local')
                     ->directory('temp-imports')
-                    ->visibility('private'),
+                    ->visibility('public'),
             ])
             ->action(function (array $data) {
                 try {
-                    $filePath = storage_path('app/' . $data['file']);
+                    $filePath = storage_path('app/private/' . $data['file']);
                     
                     if (!file_exists($filePath)) {
                         Notification::make()
                             ->title('Lỗi!')
-                            ->body('File không tồn tại.')
+                            ->body('File không tồn tại: ' . $filePath)
                             ->danger()
                             ->send();
                         return;
@@ -128,10 +128,12 @@ class QuickActions extends Widget implements HasForms, HasActions
                     Notification::make()
                         ->title('Import thành công!')
                         ->body(sprintf(
-                            'Đã tạo: %d đơn vị, %d công tơ, %d chỉ số',
+                            'Đã tạo: %d đơn vị, %d công tơ, %d chỉ số | Cập nhật: %d đơn vị, %d công tơ',
                             $stats['organizations_created'] ?? 0,
                             $stats['meters_created'] ?? 0,
-                            $stats['readings_created'] ?? 0
+                            $stats['readings_created'] ?? 0,
+                            $stats['organizations_updated'] ?? 0,
+                            $stats['meters_updated'] ?? 0
                         ))
                         ->success()
                         ->send();
@@ -225,25 +227,5 @@ class QuickActions extends Widget implements HasForms, HasActions
                         ->send();
                 }
             });
-    }
-
-    public function downloadTemplate()
-    {
-        $templatePath = storage_path('app/templates/import-tong-hop-template.csv');
-        
-        if (!file_exists($templatePath)) {
-            Notification::make()
-                ->title('Lỗi!')
-                ->body('File mẫu không tồn tại.')
-                ->danger()
-                ->send();
-            return;
-        }
-
-        return response()->download(
-            $templatePath,
-            'mau-import-tong-hop-' . date('Y-m-d') . '.csv',
-            ['Content-Type' => 'text/csv']
-        );
     }
 }

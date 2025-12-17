@@ -14,7 +14,9 @@ use Filament\Actions\CreateAction;
 use Filament\Actions\EditAction;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\ViewAction;
+use Filament\Actions\Action;
 use App\Filament\Resources\BillDetails\BillDetailResource;
+use App\Filament\Resources\ElectricMeters\ElectricMeterResource;
 
 class BillDetailsRelationManager extends RelationManager
 {
@@ -26,7 +28,12 @@ class BillDetailsRelationManager extends RelationManager
     {
         return $table
             ->columns([
-                TextColumn::make('electricMeter.meter_number')->label('Công tơ'),
+                TextColumn::make('electricMeter.meter_number')
+                    ->label('Công tơ')
+                    ->url(fn ($record) => ElectricMeterResource::getUrl('view', ['record' => $record->electric_meter_id]))
+                    ->openUrlInNewTab()
+                    ->color('primary')
+                    ->tooltip('Click để xem chi tiết công tơ'),
                 TextColumn::make('consumption')->label('Tiêu thụ')->suffix(' kWh'),
                 TextColumn::make('price_per_kwh')->label('Đơn giá')->money('VND', true),
                 TextColumn::make('hsn')->label('Số sê-ri'),
@@ -36,15 +43,23 @@ class BillDetailsRelationManager extends RelationManager
                 // you can add filters here if needed
             ])
             ->headerActions([
-                CreateAction::make()->label('Tạo mới'),
+                CreateAction::make()
+                    ->label('Tạo mới')
+                    ->visible(fn () => $this->getOwnerRecord()->payment_status !== 'PAID'),
             ])
             ->recordActions([
+                Action::make('viewMeter')
+                    ->label('Xem công tơ')
+                    ->icon('heroicon-o-bolt')
+                    ->url(fn ($record) => ElectricMeterResource::getUrl('view', ['record' => $record->electric_meter_id]))
+                    ->openUrlInNewTab(),
                 ViewAction::make()
                     ->label('Xem')
                     ->url(fn ($record) => BillDetailResource::getUrl('view', ['record' => $record]))
                     ->openUrlInNewTab(),
-                EditAction::make()->label('Sửa'),
-                DeleteAction::make()->label('Xóa'),
+                EditAction::make()
+                    ->label('Sửa')
+                    ->visible(fn ($record) => $record->bill->payment_status !== 'PAID'),
             ]);
     }
 
