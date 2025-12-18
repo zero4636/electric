@@ -8,6 +8,7 @@ use Filament\Forms\Components\Grid;
 use Filament\Schemas\Components\Section;
 use App\Models\TariffType;
 use App\Models\ElectricityTariff;
+use App\Helpers\OrganizationHelper;
 
 class ElectricMeterForm
 {
@@ -26,7 +27,11 @@ class ElectricMeterForm
 
                     Select::make('organization_unit_id')
                         ->label('Hộ tiêu thụ điện')
-                        ->relationship('organizationUnit', 'name')
+                        ->relationship(
+                            'organizationUnit',
+                            'name',
+                            fn ($query) => OrganizationHelper::scopeOrganizationUnitsToUser($query)
+                        )
                         ->searchable()
                         ->preload()
                         ->required(),

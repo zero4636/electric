@@ -11,6 +11,7 @@ use Filament\Forms\Components\Placeholder;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
 use Filament\Schemas\Components\Utilities\Get;
+use App\Helpers\OrganizationHelper;
 
 class MeterReadingForm
 {
@@ -27,7 +28,14 @@ class MeterReadingForm
                     ->schema([
                         Select::make('electric_meter_id')
                             ->label('Công tơ điện')
-                            ->relationship('electricMeter', 'meter_number')
+                            ->relationship(
+                                'electricMeter',
+                                'meter_number',
+                                fn ($query) => OrganizationHelper::scopeElectricMetersToUserOrganizations($query)
+                            )
+                            ->getOptionLabelFromRecordUsing(fn ($record) => 
+                                $record->meter_number . ' - ' . $record->organizationUnit?->name ?? ''
+                            )
                             ->searchable()
                             ->preload()
                             ->required()

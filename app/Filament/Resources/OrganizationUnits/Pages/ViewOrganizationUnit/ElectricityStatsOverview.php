@@ -43,8 +43,8 @@ class ElectricityStatsOverview extends BaseWidget
             ];
         }
 
-        // Tính tiêu thụ tháng hiện tại
-        $currentMonthConsumption = $this->calculateMonthlyConsumption($meterIds, $currentMonth, $currentYear);
+        // Tính tiêu thụ tháng hiện tại (đặc biệt: nếu không có reading trước thì lấy current value)
+        $currentMonthConsumption = $this->calculateCurrentMonthConsumption($meterIds, $currentMonth, $currentYear);
         
         // Tính tiêu thụ tháng trước
         $lastMonth = $currentMonth - 1;
@@ -68,12 +68,17 @@ class ElectricityStatsOverview extends BaseWidget
         
         // Tính tổng tiêu thụ năm
         $yearlyConsumption = 0;
+        $monthsWithData = 0;
         for ($month = 1; $month <= 12; $month++) {
-            $yearlyConsumption += $this->calculateMonthlyConsumption($meterIds, $month, $currentYear);
+            $monthlyValue = $this->calculateMonthlyConsumption($meterIds, $month, $currentYear);
+            if ($monthlyValue > 0) {
+                $monthsWithData++;
+            }
+            $yearlyConsumption += $monthlyValue;
         }
         
-        // Tính số tiền tháng hiện tại (3,505 VNĐ/kWh)
-        $currentMonthAmount = $currentMonthConsumption * 3505;
+        // Tính số tiền tháng hiện tại (sử dụng logic billing thực tế)
+        $currentMonthAmount = $this->calculateCurrentMonthAmount($meterIds, $currentMonth, $currentYear);
         
         // Đếm số công tơ
         $totalMeters = count($meterIds);
@@ -108,12 +113,12 @@ class ElectricityStatsOverview extends BaseWidget
                 ->chart($this->getSparklineData($meterIds, $currentYear, $currentMonth)),
                 
             Stat::make('Tổng tiêu thụ năm ' . $currentYear, number_format($yearlyConsumption, 0, ',', '.') . ' kWh')
-                ->description($yearlyConsumption > 0 ? 'Trung bình: ' . number_format($yearlyConsumption / 12, 0, ',', '.') . ' kWh/tháng' : 'Chưa có dữ liệu')
+                ->description($yearlyConsumption > 0 ? 'Trung bình: ' . number_format($monthsWithData > 0 ? $yearlyConsumption / $monthsWithData : 0, 0, ',', '.') . ' kWh/tháng' : 'Chưa có dữ liệu')
                 ->descriptionIcon('heroicon-m-calendar')
                 ->color('primary'),
                 
-            Stat::make('Số tiền tháng này', number_format($currentMonthAmount, 0, ',', '.') . ' đ')
-                ->description($currentMonthConsumption > 0 ? 'Đơn giá: 3.505 đ/kWh' : 'Chưa có dữ liệu tiêu thụ')
+            Stat::make('Số tiền tháng này', number_format($currentMonthAmount['total'], 0, ',', '.') . ' đ')
+                ->description($currentMonthConsumption > 0 ? 'Đơn giá TB: ' . number_format($currentMonthAmount['avg_price'], 0, ',', '.') . ' đ/kWh' : 'Chưa có dữ liệu tiêu thụ')
                 ->descriptionIcon('heroicon-m-banknotes')
                 ->color('warning'),
         ];
@@ -158,8 +163,47 @@ class ElectricityStatsOverview extends BaseWidget
         $totalConsumption = 0;
         
         foreach ($meterIds as $meterId) {
+            // Lấy reading trong tháng này
             $current = MeterReading::where('electric_meter_id', $meterId)
                 ->whereBetween('reading_date', [$startDate, $endDate])
+                ->orderBy('reading_date', 'desc')
+                ->first();
+            
+            if ($current) {
+                // Có reading trong tháng này
+                $previous = MeterReading::where('electric_meter_id', $meterId)
+                    ->where('reading_date', '<', $current->reading_date)
+                    ->orderBy('reading_date', 'desc')
+                    ->first();
+                
+                $meter = \App\Models\ElectricMeter::find($meterId);
+                
+                if ($previous) {
+                    $consumption = ($current->reading_value - $previous->reading_value) * ($meter->hsn ?? 1);
+                } else {
+                    // Không có reading trước -> coi như bắt đầu từ 0
+                    $consumption = $current->reading_value * ($meter->hsn ?? 1);
+                }
+                
+                $totalConsumption += $consumption;
+            }
+            // Không có reading trong tháng này -> consumption = 0 (không cộng gì cả)
+        }
+        
+        return round($totalConsumption, 2);
+    }
+
+    private function calculateCurrentMonthConsumption(array $meterIds, int $month, int $year): float
+    {
+        $startDate = Carbon::create($year, $month, 1)->startOfMonth();
+        $endDate = Carbon::create($year, $month, 1)->endOfMonth();
+        
+        $totalConsumption = 0;
+        
+        foreach ($meterIds as $meterId) {
+            // Lấy reading gần nhất đến cuối tháng này
+            $current = MeterReading::where('electric_meter_id', $meterId)
+                ->where('reading_date', '<=', $endDate)
                 ->orderBy('reading_date', 'desc')
                 ->first();
             
@@ -169,11 +213,16 @@ class ElectricityStatsOverview extends BaseWidget
                     ->orderBy('reading_date', 'desc')
                     ->first();
                 
+                $meter = \App\Models\ElectricMeter::find($meterId);
+                
                 if ($previous) {
-                    $meter = \App\Models\ElectricMeter::find($meterId);
                     $consumption = ($current->reading_value - $previous->reading_value) * ($meter->hsn ?? 1);
-                    $totalConsumption += $consumption;
+                } else {
+                    // Không có reading trước -> coi như bắt đầu từ 0
+                    $consumption = $current->reading_value * ($meter->hsn ?? 1);
                 }
+                
+                $totalConsumption += $consumption;
             }
         }
         
@@ -198,5 +247,64 @@ class ElectricityStatsOverview extends BaseWidget
         }
         
         return $data;
+    }
+
+    private function calculateCurrentMonthAmount(array $meterIds, int $month, int $year): array
+    {
+        $startDate = Carbon::create($year, $month, 1)->startOfMonth();
+        $endDate = Carbon::create($year, $month, 1)->endOfMonth();
+        
+        $totalAmount = 0;
+        $totalChargeableKwh = 0;
+        
+        foreach ($meterIds as $meterId) {
+            // Lấy reading gần nhất đến cuối tháng này
+            $current = MeterReading::where('electric_meter_id', $meterId)
+                ->where('reading_date', '<=', $endDate)
+                ->orderBy('reading_date', 'desc')
+                ->first();
+            
+            if ($current) {
+                $previous = MeterReading::where('electric_meter_id', $meterId)
+                    ->where('reading_date', '<', $current->reading_date)
+                    ->orderBy('reading_date', 'desc')
+                    ->first();
+                
+                $meter = \App\Models\ElectricMeter::find($meterId);
+                
+                $rawConsumption = 0;
+                if ($previous) {
+                    $rawConsumption = ($current->reading_value - $previous->reading_value) * ($meter->hsn ?? 1);
+                } else {
+                    // Không có reading trước -> coi như bắt đầu từ 0
+                    $rawConsumption = $current->reading_value * ($meter->hsn ?? 1);
+                }
+                
+                if ($rawConsumption > 0) {
+                    // Áp dụng trợ cấp
+                    $subsidizedApplied = min($rawConsumption, $meter->subsidized_kwh ?? 0);
+                    $chargeableKwh = max(0, $rawConsumption - $subsidizedApplied);
+                    
+                    // Lấy biểu giá hiện tại
+                    $tariff = \App\Models\ElectricityTariff::where('tariff_type_id', $meter->tariff_type_id)
+                        ->where('effective_from', '<=', $endDate)
+                        ->where(function($q) use ($endDate) {
+                            $q->whereNull('effective_to')->orWhere('effective_to', '>=', $endDate);
+                        })
+                        ->first();
+                    
+                    if ($tariff && $chargeableKwh > 0) {
+                        $amount = $chargeableKwh * $tariff->price_per_kwh;
+                        $totalAmount += $amount;
+                        $totalChargeableKwh += $chargeableKwh;
+                    }
+                }
+            }
+        }
+        
+        return [
+            'total' => $totalAmount,
+            'avg_price' => $totalChargeableKwh > 0 ? $totalAmount / $totalChargeableKwh : 0
+        ];
     }
 }

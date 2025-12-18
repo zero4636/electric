@@ -78,4 +78,39 @@ class ElectricMeterResource extends Resource
             'edit' => EditElectricMeter::route('/{record}/edit'),
         ];
     }
+
+    /**
+     * Authorization methods
+     */
+    public static function canViewAny(): bool
+    {
+        return auth()->user()?->isAdmin() || auth()->user()?->isSuperAdmin() ?? false;
+    }
+
+    public static function canView($record): bool
+    {
+        $user = auth()->user();
+        if (!$user) return false;
+
+        if ($user->isSuperAdmin()) {
+            return true;
+        }
+
+        return $user->canManageOrganization($record->organizationUnit);
+    }
+
+    public static function canCreate(): bool
+    {
+        return auth()->user()?->isAdmin() || auth()->user()?->isSuperAdmin() ?? false;
+    }
+
+    public static function canEdit($record): bool
+    {
+        return static::canView($record);
+    }
+
+    public static function canDelete($record): bool
+    {
+        return static::canView($record);
+    }
 }

@@ -6,6 +6,7 @@ use App\Models\OrganizationUnit;
 use App\Models\MeterReading;
 use Filament\Tables;
 use Filament\Tables\Table;
+use Filament\Tables\Actions\Action;
 use Filament\Widgets\TableWidget as BaseWidget;
 use Carbon\Carbon;
 
@@ -49,10 +50,45 @@ class TopConsumersWidget extends BaseWidget
                         ->first();
                     
                     if ($previous) {
-                        $consumption = ($current->reading_value - $previous->reading_value) * $meter->hsn;
-                        if ($consumption > 0) {
-                            $totalConsumption += $consumption;
-                            $totalAmount += $consumption * 3505;
+                        $rawConsumption = ($current->reading_value - $previous->reading_value) * $meter->hsn;
+                        if ($rawConsumption > 0) {
+                            // Tính tiền theo logic thực tế
+                            $subsidizedApplied = min($rawConsumption, $meter->subsidized_kwh ?? 0);
+                            $chargeableKwh = max(0, $rawConsumption - $subsidizedApplied);
+                            
+                            // Lấy biểu giá hiện tại
+                            $tariff = \App\Models\ElectricityTariff::where('tariff_type_id', $meter->tariff_type_id)
+                                ->where('effective_from', '<=', $endDate)
+                                ->where(function($q) use ($endDate) {
+                                    $q->whereNull('effective_to')->orWhere('effective_to', '>=', $endDate);
+                                })
+                                ->first();
+                            
+                            $price = $tariff ? $tariff->price_per_kwh : 3505; // fallback
+                            $amount = $chargeableKwh * $price;
+                            
+                            $totalConsumption += $rawConsumption;
+                            $totalAmount += $amount;
+                        }
+                    } else {
+                        // Không có previous reading -> coi như bắt đầu từ 0
+                        $rawConsumption = $current->reading_value * $meter->hsn;
+                        if ($rawConsumption > 0) {
+                            $subsidizedApplied = min($rawConsumption, $meter->subsidized_kwh ?? 0);
+                            $chargeableKwh = max(0, $rawConsumption - $subsidizedApplied);
+                            
+                            $tariff = \App\Models\ElectricityTariff::where('tariff_type_id', $meter->tariff_type_id)
+                                ->where('effective_from', '<=', $endDate)
+                                ->where(function($q) use ($endDate) {
+                                    $q->whereNull('effective_to')->orWhere('effective_to', '>=', $endDate);
+                                })
+                                ->first();
+                            
+                            $price = $tariff ? $tariff->price_per_kwh : 3505; // fallback
+                            $amount = $chargeableKwh * $price;
+                            
+                            $totalConsumption += $rawConsumption;
+                            $totalAmount += $amount;
                         }
                     }
                 }
@@ -101,7 +137,9 @@ class TopConsumersWidget extends BaseWidget
                 Tables\Columns\TextColumn::make('name')
                     ->label('Tên hộ tiêu thụ')
                     ->searchable()
-                    ->weight('bold'),
+                    ->weight('bold')
+                    ->icon('heroicon-o-eye')
+                    ->description('Click để xem chi tiết'),
                     
                 Tables\Columns\TextColumn::make('parent.name')
                     ->label('Đơn vị')
@@ -124,6 +162,9 @@ class TopConsumersWidget extends BaseWidget
                     })
                     ->color('warning'),
             ])
+            ->recordUrl(fn (OrganizationUnit $record): string => 
+                route('filament.admin.resources.organization-units.view', ['record' => $record->id])
+            )
             ->paginated(false);
     }
 }

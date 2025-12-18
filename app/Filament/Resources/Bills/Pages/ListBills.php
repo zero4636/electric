@@ -60,8 +60,7 @@ class ListBills extends ListRecords
                             return $units->union($independent);
                         })
                         ->searchable()
-                        ->required()
-                        ->placeholder('Chọn đơn vị hoặc hợp đồng tự do')
+                        ->placeholder('Chọn đơn vị hoặc bỏ trống để tạo tất cả')
                         ->helperText('🏢 = Đơn vị chủ quản (tạo cho tất cả hộ tiêu thụ), 📋 = Hợp đồng tự do')
                         ->live()
                         ->native(false),
@@ -160,11 +159,41 @@ class ListBills extends ListRecords
 
                         } else {
                             // Tạo cho toàn bộ đơn vị (và các đơn vị con)
-                            $result = $billingService->createBillForOrganizationUnit(
-                                $data['organization_unit_id'],
-                                $billingMonth,
-                                $dueDate
-                            );
+                            if (isset($data['organization_unit_id'])) {
+                                $result = $billingService->createBillForOrganizationUnit(
+                                    $data['organization_unit_id'],
+                                    $billingMonth,
+                                    $dueDate
+                                );
+                            } else {
+                                // Tạo cho tất cả đơn vị consumer
+                                $consumers = OrganizationUnit::where('type', 'CONSUMER')
+                                    ->where('status', 'ACTIVE')
+                                    ->get();
+                                
+                                $totalCreated = 0;
+                                $totalErrors = [];
+                                
+                                foreach ($consumers as $consumer) {
+                                    try {
+                                        $result = $billingService->createBillForOrganizationUnit(
+                                            $consumer->id,
+                                            $billingMonth,
+                                            $dueDate
+                                        );
+                                        $totalCreated += $result['details_created'];
+                                        $totalErrors = array_merge($totalErrors, $result['errors']);
+                                    } catch (\Exception $e) {
+                                        $totalErrors[] = "Lỗi tại {$consumer->name}: " . $e->getMessage();
+                                    }
+                                }
+                                
+                                $result = [
+                                    'details_created' => $totalCreated,
+                                    'total_meters' => $totalCreated + count($totalErrors),
+                                    'errors' => $totalErrors
+                                ];
+                            }
 
                             DB::commit();
 

@@ -21,6 +21,9 @@ class DatabaseSeeder extends Seeder
         // Create tariff types first (required for billing)
         $this->createTariffTypes();
         
+        // Create electricity tariffs
+        $this->call(ElectricityTariffSeeder::class);
+        
         // Create admin user
         $this->call(AdminSeeder::class);
 

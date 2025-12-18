@@ -6,6 +6,7 @@ use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Schemas\Components\Section;
+use App\Helpers\OrganizationHelper;
 
 class OrganizationUnitForm
 {
@@ -30,7 +31,11 @@ class OrganizationUnitForm
 
                     Select::make('parent_id')
                         ->label('Đơn vị cấp trên')
-                        ->relationship('parent', 'name')
+                        ->relationship(
+                            'parent',
+                            'name',
+                            fn ($query) => OrganizationHelper::scopeOrganizationUnitsToUser($query)
+                        )
                         ->searchable()
                         ->preload()
                         ->nullable(),

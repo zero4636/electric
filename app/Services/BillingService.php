@@ -80,7 +80,11 @@ class BillingService
                     ->first();
 
                 if (!$startReading) {
-                    throw new \Exception("Không đủ chỉ số để tính tiêu thụ cho công tơ {$meter->meter_number} (chưa có lịch sử thanh toán)");
+                    // Không có chỉ số đầu kỳ -> Coi như bắt đầu từ 0
+                    $startReading = (object) [
+                        'reading_value' => 0,
+                        'reading_date' => $endReading->reading_date
+                    ];
                 }
             }
 

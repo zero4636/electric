@@ -119,6 +119,24 @@ class ViewOrganizationUnit extends ViewRecord
                     $readings = $this->getMeterReadings($meter->id, $month, $year);
                     
                     if ($readings) {
+                        $rawConsumption = ($readings['current'] - $readings['previous']) * $meter->hsn;
+                        
+                        // Tính tiền theo logic thực tế
+                        $subsidizedApplied = min($rawConsumption, $meter->subsidized_kwh ?? 0);
+                        $chargeableKwh = max(0, $rawConsumption - $subsidizedApplied);
+                        
+                        // Lấy biểu giá hiện tại
+                        $endDate = Carbon::create($year, $month, 1)->endOfMonth();
+                        $tariff = \App\Models\ElectricityTariff::where('tariff_type_id', $meter->tariff_type_id)
+                            ->where('effective_from', '<=', $endDate)
+                            ->where(function($q) use ($endDate) {
+                                $q->whereNull('effective_to')->orWhere('effective_to', '>=', $endDate);
+                            })
+                            ->first();
+                        
+                        $price = $tariff ? $tariff->price_per_kwh : 3505; // fallback
+                        $amount = $chargeableKwh * $price;
+                        
                         $meters[] = [
                             'name' => $consumer->name,
                             'code' => $consumer->code,
@@ -127,11 +145,11 @@ class ViewOrganizationUnit extends ViewRecord
                             'current_reading' => $readings['current'],
                             'previous_reading' => $readings['previous'],
                             'hsn' => $meter->hsn,
-                            'consumption' => ($readings['current'] - $readings['previous']) * $meter->hsn,
-                            'price' => 3505, // Default price
-                            'amount' => (($readings['current'] - $readings['previous']) * $meter->hsn) * 3505,
+                            'consumption' => $rawConsumption,
+                            'price' => $price,
+                            'amount' => $amount,
                             'substation' => $meter->substation->name ?? '',
-                            'subsidy' => '',
+                            'subsidy' => $subsidizedApplied > 0 ? number_format($subsidizedApplied, 0, ',', '.') : '',
                         ];
                     }
                 }
@@ -147,17 +165,35 @@ class ViewOrganizationUnit extends ViewRecord
                 $readings = $this->getMeterReadings($meter->id, $month, $year);
                 
                 if ($readings) {
+                    $rawConsumption = ($readings['current'] - $readings['previous']) * $meter->hsn;
+                    
+                    // Tính tiền theo logic thực tế
+                    $subsidizedApplied = min($rawConsumption, $meter->subsidized_kwh ?? 0);
+                    $chargeableKwh = max(0, $rawConsumption - $subsidizedApplied);
+                    
+                    // Lấy biểu giá hiện tại
+                    $endDate = Carbon::create($year, $month, 1)->endOfMonth();
+                    $tariff = \App\Models\ElectricityTariff::where('tariff_type_id', $meter->tariff_type_id)
+                        ->where('effective_from', '<=', $endDate)
+                        ->where(function($q) use ($endDate) {
+                            $q->whereNull('effective_to')->orWhere('effective_to', '>=', $endDate);
+                        })
+                        ->first();
+                    
+                    $price = $tariff ? $tariff->price_per_kwh : 3505; // fallback
+                    $amount = $chargeableKwh * $price;
+                    
                     $meters[] = [
                         'meter_number' => $meter->meter_number,
                         'location' => $meter->installation_location ?? $organization->building,
                         'current_reading' => $readings['current'],
                         'previous_reading' => $readings['previous'],
                         'hsn' => $meter->hsn,
-                        'consumption' => ($readings['current'] - $readings['previous']) * $meter->hsn,
-                        'price' => 3505,
-                        'amount' => (($readings['current'] - $readings['previous']) * $meter->hsn) * 3505,
+                        'consumption' => $rawConsumption,
+                        'price' => $price,
+                        'amount' => $amount,
                         'substation' => $meter->substation->name ?? '',
-                        'subsidy' => '',
+                        'subsidy' => $subsidizedApplied > 0 ? number_format($subsidizedApplied, 0, ',', '.') : '',
                     ];
                 }
             }

@@ -83,4 +83,39 @@ class OrganizationUnitResource extends Resource
             'view' => ViewOrganizationUnit::route('/{record}'),
         ];
     }
+
+    /**
+     * Authorization methods
+     */
+    public static function canViewAny(): bool
+    {
+        return auth()->user()?->isAdmin() || auth()->user()?->isSuperAdmin() ?? false;
+    }
+
+    public static function canView($record): bool
+    {
+        $user = auth()->user();
+        if (!$user) return false;
+
+        if ($user->isSuperAdmin()) {
+            return true;
+        }
+
+        return $user->canManageOrganization($record);
+    }
+
+    public static function canCreate(): bool
+    {
+        return auth()->user()?->isAdmin() || auth()->user()?->isSuperAdmin() ?? false;
+    }
+
+    public static function canEdit($record): bool
+    {
+        return static::canView($record);
+    }
+
+    public static function canDelete($record): bool
+    {
+        return static::canView($record);
+    }
 }

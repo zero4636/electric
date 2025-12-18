@@ -65,7 +65,7 @@ class ElectricityConsumptionChart extends ChartWidget
             $totalConsumption = 0;
             
             foreach ($meterIds as $meterId) {
-                // Lấy reading cuối tháng
+                // Lấy reading trong tháng này (cùng logic với stats)
                 $current = MeterReading::where('electric_meter_id', $meterId)
                     ->whereBetween('reading_date', [$startDate, $endDate])
                     ->orderBy('reading_date', 'desc')
@@ -78,11 +78,16 @@ class ElectricityConsumptionChart extends ChartWidget
                         ->orderBy('reading_date', 'desc')
                         ->first();
                     
+                    $meter = \App\Models\ElectricMeter::find($meterId);
+                    
                     if ($previous) {
-                        $meter = \App\Models\ElectricMeter::find($meterId);
                         $consumption = ($current->reading_value - $previous->reading_value) * ($meter->hsn ?? 1);
-                        $totalConsumption += $consumption;
+                    } else {
+                        // Không có reading trước -> coi như bắt đầu từ 0
+                        $consumption = $current->reading_value * ($meter->hsn ?? 1);
                     }
+                    
+                    $totalConsumption += $consumption;
                 }
             }
             

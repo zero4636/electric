@@ -17,10 +17,11 @@ class TariffTypeFactory extends Factory
     public function definition(): array
     {
         $types = [
-            ['code' => 'RESIDENTIAL', 'name' => 'Dân cư', 'color' => 'success'],
-            ['code' => 'COMMERCIAL', 'name' => 'Thương mại', 'color' => 'primary'],
-            ['code' => 'INDUSTRIAL', 'name' => 'Công nghiệp', 'color' => 'warning'],
-            ['code' => 'GOVERNMENT', 'name' => 'Cơ quan nhà nước', 'color' => 'info'],
+            ['code' => 'SINH_HOAT', 'name' => 'Sinh hoạt', 'color' => 'success'],
+            ['code' => 'SAN_XUAT', 'name' => 'Sản xuất', 'color' => 'warning'],
+            ['code' => 'KINH_DOANH', 'name' => 'Kinh doanh', 'color' => 'primary'],
+            ['code' => 'HANH_CHINH_SU_NGHIEP', 'name' => 'Hành chính sự nghiệp', 'color' => 'info'],
+            ['code' => 'CHIEU_SANG_CONG_CONG', 'name' => 'Chiếu sáng công cộng', 'color' => 'gray'],
         ];
         
         $type = fake()->randomElement($types);
@@ -31,7 +32,7 @@ class TariffTypeFactory extends Factory
             'description' => fake()->sentence(),
             'color' => $type['color'],
             'icon' => 'heroicon-o-bolt',
-            'status' => fake()->randomElement(['ACTIVE', 'INACTIVE']),
+            'status' => 'ACTIVE',
             'sort_order' => fake()->numberBetween(0, 100),
         ];
     }

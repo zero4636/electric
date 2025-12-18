@@ -6,6 +6,7 @@ use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
+use App\Helpers\OrganizationHelper;
 
 class BillDetailForm
 {
@@ -18,14 +19,29 @@ class BillDetailForm
                     ->components([
                         Select::make('bill_id')
                             ->label('Hóa đơn')
-                            ->relationship('bill', 'id', fn($query) => $query->with('organizationUnit'))
+                            ->relationship(
+                                'bill',
+                                'id',
+                                fn($query) => $query
+                                    ->with('organizationUnit')
+                                    ->whereHas('organizationUnit', fn ($q) => 
+                                        OrganizationHelper::scopeOrganizationUnitsToUser($q)
+                                    )
+                            )
                             ->getOptionLabelFromRecordUsing(fn ($record) => "#{$record->id} - {$record->organizationUnit->name} - " . $record->billing_month->format('m/Y'))
                             ->required()
                             ->searchable(),
 
                         Select::make('electric_meter_id')
                             ->label('Công tơ')
-                            ->relationship('electricMeter','meter_number')
+                            ->relationship(
+                                'electricMeter',
+                                'meter_number',
+                                fn ($query) => OrganizationHelper::scopeElectricMetersToUserOrganizations($query)
+                            )
+                            ->getOptionLabelFromRecordUsing(fn ($record) => 
+                                $record->meter_number . ' - ' . $record->organizationUnit?->name ?? ''
+                            )
                             ->searchable()
                             ->required(),
 
