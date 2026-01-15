@@ -232,9 +232,7 @@
                 <td class="notes">
                     Số công tơ: {{ $meter['meter_number'] }}.<br><br>
                     Vị trí đặt: {{ $meter['location'] ?? '' }}.<br><br>
-                    TBA: {{ $meter['substation'] ?? '' }}.<br>
-                    Mã sổ: {{ $consumer->building ?? '' }}.<br>
-                    Trang: .
+                    TBA: {{ $meter['substation'] ?? '' }}.
                 </td>
             </tr>
             @endforeach
