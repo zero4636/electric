@@ -27,12 +27,32 @@ class ListBills extends ListRecords
                 ->icon('heroicon-o-bolt')
                 ->color('success')
                 ->form([
-                    DatePicker::make('billing_month')
-                        ->label('Tháng lập hóa đơn')
-                        ->displayFormat('m/Y')
-                        ->format('Y-m-01')
+                    Select::make('billing_month')
+                        ->label('Tháng')
+                        ->options([
+                            1 => 'Tháng 1', 2 => 'Tháng 2', 3 => 'Tháng 3',
+                            4 => 'Tháng 4', 5 => 'Tháng 5', 6 => 'Tháng 6',
+                            7 => 'Tháng 7', 8 => 'Tháng 8', 9 => 'Tháng 9',
+                            10 => 'Tháng 10', 11 => 'Tháng 11', 12 => 'Tháng 12',
+                        ])
                         ->required()
-                        ->default(now()->startOfMonth())
+                        ->default(now()->month)
+                        ->native(false),
+                    
+                    Select::make('billing_year')
+                        ->label('Năm')
+                        ->options(function () {
+                            $currentYear = now()->year;
+                            $years = [];
+                            // 10 năm trước đến năm hiện tại
+                            for ($y = $currentYear - 10; $y <= $currentYear; $y++) {
+                                $years[$y] = $y;
+                            }
+                            return array_reverse($years, true);
+                        })
+                        ->required()
+                        ->default(now()->year)
+                        ->searchable()
                         ->native(false),
 
                     DatePicker::make('due_date')
@@ -114,7 +134,8 @@ class ListBills extends ListRecords
                 ])
                 ->action(function (array $data) {
                     $billingService = app(BillingService::class);
-                    $billingMonth = Carbon::parse($data['billing_month']);
+                    // Tạo billing month từ tháng và năm đã chọn
+                    $billingMonth = Carbon::createFromDate($data['billing_year'], $data['billing_month'], 1)->startOfMonth();
                     $dueDate = Carbon::parse($data['due_date']);
 
                     try {
@@ -128,7 +149,21 @@ class ListBills extends ListRecords
                                 $dueDate
                             );
 
+                            // Kiểm tra nếu không có công tơ nào được tạo
+                            if ($results['success'] === 0 && $results['failed'] === 0) {
+                                DB::rollBack();
+                                Notification::make()
+                                    ->title('Không có dữ liệu')
+                                    ->body("Không tìm thấy chỉ số đọc trong tháng {$billingMonth->format('m/Y')} cho các công tơ đã chọn")
+                                    ->warning()
+                                    ->send();
+                                return;
+                            }
+
                             $message = "Thành công: {$results['success']} công tơ";
+                            if (($results['skipped'] ?? 0) > 0) {
+                                $message .= ", bỏ qua {$results['skipped']} (không có chỉ số)";
+                            }
                             if ($results['failed'] > 0) {
                                 $message .= ", Lỗi: {$results['failed']} công tơ";
                             }
@@ -195,11 +230,25 @@ class ListBills extends ListRecords
                                 ];
                             }
 
+                            // Kiểm tra nếu không có công tơ nào được tạo
+                            if ($result['details_created'] === 0 && count($result['errors']) === 0) {
+                                DB::rollBack();
+                                Notification::make()
+                                    ->title('Không có dữ liệu')
+                                    ->body("Không tìm thấy chỉ số đọc trong tháng {$billingMonth->format('m/Y')} cho đơn vị này")
+                                    ->warning()
+                                    ->send();
+                                return;
+                            }
+
                             DB::commit();
 
                             $message = "Đã tạo {$result['details_created']}/{$result['total_meters']} công tơ thành công";
+                            if (($result['skipped'] ?? 0) > 0) {
+                                $message .= ", bỏ qua {$result['skipped']} (không có chỉ số)";
+                            }
                             if (count($result['errors']) > 0) {
-                                $message .= " (" . count($result['errors']) . " lỗi)";
+                                $message .= ", " . count($result['errors']) . " lỗi";
                             }
 
                             Notification::make()

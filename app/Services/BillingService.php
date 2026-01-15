@@ -12,7 +12,7 @@ use Illuminate\Support\Facades\DB;
 
 class BillingService
 {
-    public function createBillForMeter(ElectricMeter $meter, Carbon $billingMonth, Carbon $dueDate): Bill
+    public function createBillForMeter(ElectricMeter $meter, Carbon $billingMonth, Carbon $dueDate): ?Bill
     {
         return DB::transaction(function () use ($meter, $billingMonth, $dueDate) {
             // Kiểm tra đã có hóa đơn cho tháng này chưa
@@ -43,14 +43,18 @@ class BillingService
                 ]
             );
 
-            // Lấy chỉ số cuối cùng trong tháng thanh toán
+            // Lấy chỉ số trong tháng thanh toán
             $endReading = MeterReading::where('electric_meter_id', $meter->id)
-                ->where('reading_date', '<=', $billingMonth->copy()->endOfMonth())
+                ->whereBetween('reading_date', [
+                    $billingMonth->copy()->startOfMonth(),
+                    $billingMonth->copy()->endOfMonth()
+                ])
                 ->orderBy('reading_date', 'desc')
                 ->first();
 
+            // Nếu không có chỉ số trong tháng này, bỏ qua công tơ
             if (!$endReading) {
-                throw new \Exception("Không tìm thấy chỉ số cho công tơ {$meter->meter_number} trong tháng " . $billingMonth->format('m/Y'));
+                return null;
             }
 
             // Tìm bill_detail gần nhất đã thanh toán của meter này
@@ -101,7 +105,8 @@ class BillingService
             $subsidizedApplied = min($rawConsumption, $meter->subsidized_kwh ?? 0);
             $chargeableKwh = max(0, $rawConsumption - $subsidizedApplied);
 
-            $tariff = ElectricityTariff::getActiveTariff($meter->tariff_type_id, $billingMonth);
+            // Tìm biểu giá theo ngày cuối tháng để lấy biểu giá mới nhất có hiệu lực trong tháng
+            $tariff = ElectricityTariff::getActiveTariff($meter->tariff_type_id, $billingMonth->copy()->endOfMonth());
 
             if (!$tariff) {
                 throw new \Exception("Không tìm thấy biểu giá cho loại công tơ ID: {$meter->tariff_type_id}");
@@ -157,11 +162,19 @@ class BillingService
 
         $billsByOrgUnit = [];
         $detailsCreated = 0;
+        $skipped = 0;
         $errors = [];
 
         foreach ($meters as $meter) {
             try {
                 $bill = $this->createBillForMeter($meter, $billingMonth, $dueDate);
+                
+                // Nếu return null (không có chỉ số trong tháng), bỏ qua
+                if ($bill === null) {
+                    $skipped++;
+                    continue;
+                }
+                
                 $detailsCreated++;
                 
                 // Track bills by organization_unit_id
@@ -176,6 +189,7 @@ class BillingService
         return [
             'bills' => array_values($billsByOrgUnit),
             'details_created' => $detailsCreated,
+            'skipped' => $skipped,
             'total_meters' => $meters->count(),
             'errors' => $errors,
         ];
@@ -189,6 +203,7 @@ class BillingService
         $results = [
             'success' => 0,
             'failed' => 0,
+            'skipped' => 0,
             'bills' => [],
             'errors' => [],
         ];
@@ -198,6 +213,13 @@ class BillingService
         foreach ($meters as $meter) {
             try {
                 $bill = $this->createBillForMeter($meter, $billingMonth, $dueDate);
+                
+                // Nếu return null (không có chỉ số trong tháng), bỏ qua
+                if ($bill === null) {
+                    $results['skipped']++;
+                    continue;
+                }
+                
                 $results['success']++;
                 
                 if (!in_array($bill->id, array_column($results['bills'], 'id'))) {
