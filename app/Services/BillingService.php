@@ -12,7 +12,7 @@ use Illuminate\Support\Facades\DB;
 
 class BillingService
 {
-    public function createBillForMeter(ElectricMeter $meter, Carbon $billingMonth, Carbon $dueDate): ?Bill
+    public function createBillForMeter(ElectricMeter $meter, Carbon $billingMonth, Carbon $dueDate): Bill
     {
         return DB::transaction(function () use ($meter, $billingMonth, $dueDate) {
             // Kiểm tra đã có hóa đơn cho tháng này chưa
@@ -203,7 +203,6 @@ class BillingService
         $results = [
             'success' => 0,
             'failed' => 0,
-            'skipped' => 0,
             'bills' => [],
             'errors' => [],
         ];
@@ -213,13 +212,6 @@ class BillingService
         foreach ($meters as $meter) {
             try {
                 $bill = $this->createBillForMeter($meter, $billingMonth, $dueDate);
-                
-                // Nếu return null (không có chỉ số trong tháng), bỏ qua
-                if ($bill === null) {
-                    $results['skipped']++;
-                    continue;
-                }
-                
                 $results['success']++;
                 
                 if (!in_array($bill->id, array_column($results['bills'], 'id'))) {
